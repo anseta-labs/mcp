@@ -1,0 +1,23 @@
+[
+  {
+    "network": "solana",
+    "token": "SOL",
+    "tokenAddress": null,
+    "stakerAddress": "DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKK",
+    "validatorAddress": "he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk",
+    "amount": "1000000000",
+    "status": "staked",
+    "rewards": "12500000"
+  },
+  {
+    "network": "mantra",
+    "token": "MANTRA",
+    "tokenAddress": null,
+    "stakerAddress": "mantra1exampleexampleexampleexampleexample000000",
+    "validatorAddress": "mantravaloper1exampleexampleexampleexampleexample00",
+    "amount": "4000000000000000000",
+    "status": "unstaking",
+    "unstakingCompletionDate": "2026-09-10T15:30:00Z",
+    "rewards": "200000000000000000"
+  }
+]

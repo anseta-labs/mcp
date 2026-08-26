@@ -1,0 +1,42 @@
+[
+  {
+    "validatorId": "solana-he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk",
+    "validatorAddress": "he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk",
+    "moniker": "Example Staking",
+    "status": "LIVE",
+    "network": {
+      "name": "solana",
+      "type": "mainnet",
+      "nativeToken": "SOL",
+      "tokenSymbol": "SOL",
+      "decimals": 9
+    },
+    "commissionRate": "0.05",
+    "maxCommissionRate": "0.10",
+    "maxCommissionChangeRate": "0.01",
+    "publicDelegationEnabled": true,
+    "creationBlockNumber": "298451200",
+    "ownerAddress": "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+    "stakingContract": null,
+    "website": "https://example-staking.invalid",
+    "securityContact": "security@example-staking.invalid",
+    "details": "Example validator operator used as a test fixture."
+  },
+  {
+    "validatorId": "mantra-mantravaloper1exampleexampleexampleexampleexample00",
+    "validatorAddress": "mantravaloper1exampleexampleexampleexampleexample00",
+    "moniker": "Second Example",
+    "status": "LIVE",
+    "network": {
+      "name": "mantra",
+      "type": "mainnet",
+      "nativeToken": "MANTRA",
+      "tokenSymbol": "MANTRA",
+      "decimals": 6
+    },
+    "commissionRate": "0.03",
+    "publicDelegationEnabled": true,
+    "website": "https://second-example.invalid",
+    "details": "Second example validator."
+  }
+]

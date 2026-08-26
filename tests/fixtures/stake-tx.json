@@ -1,0 +1,10 @@
+{
+  "transactions": [
+    {
+      "type": "Delegate",
+      "transactionType": "solana",
+      "encodingFormat": "base58",
+      "encodedTx": "3Bxs4NQNfnqPGxpzuUmVWzFxjmqhnSxMnZv8RfWk1example"
+    }
+  ]
+}

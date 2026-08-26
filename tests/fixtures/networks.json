@@ -1,0 +1,22 @@
+[
+  {
+    "network": "solana",
+    "type": "solana",
+    "nativeToken": "SOL",
+    "testnet": false,
+    "chainId": "mainnet-beta",
+    "explorer": "https://explorer.solana.com",
+    "rpc": "https://api.mainnet-beta.solana.com",
+    "networkId": "solana-mainnet"
+  },
+  {
+    "network": "mantra",
+    "type": "cosmos",
+    "nativeToken": "MANTRA",
+    "bech32Prefix": "mantra",
+    "testnet": false,
+    "chainId": "mantra-1",
+    "explorer": "https://explorer.mantrachain.io",
+    "networkId": "mantra-mainnet"
+  }
+]
