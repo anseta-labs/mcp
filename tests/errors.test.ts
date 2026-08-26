@@ -38,3 +38,12 @@ describe("parseErrorBody", () => {
     expect(err.toModelMessage()).toContain("Rate limited");
   });
 });
+
+describe("transport failures", () => {
+  it("does not tell the model to fix its arguments when the API was never reached", () => {
+    const err = new AnsetaApiError(0, "NETWORK_ERROR", "Could not reach the Anseta API at http://x");
+    const msg = err.toModelMessage();
+    expect(msg).toContain("unreachable");
+    expect(msg).not.toContain("Check the arguments");
+  });
+});

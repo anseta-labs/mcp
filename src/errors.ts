@@ -13,6 +13,9 @@ export class AnsetaApiError extends Error {
 
   /** Text returned to the model as tool output. Must say whether retrying helps. */
   toModelMessage(): string {
+    if (this.status === 0) {
+      return `Anseta API unreachable (${this.code}): ${this.message}\n\nThis is a connectivity or configuration problem, not a bad argument. Check ANSETA_BASE_URL and network access; retrying the same call is unlikely to help.`;
+    }
     const head = `Anseta API error ${this.status} (${this.code}): ${this.message}`;
     if (this.status === 400 || this.status === 422) {
       return `${head}\n\nCheck the arguments against the tool schema and call again with corrected values.`;

@@ -55,3 +55,15 @@ describe("AnsetaClient", () => {
     expect(JSON.parse(String(init.body))).toEqual({ network: "solana" });
   });
 });
+
+describe("AnsetaClient transport failures", () => {
+  it("translates a thrown fetch into an AnsetaApiError with status 0", async () => {
+    const fetchImpl = vi.fn(async () => { throw new TypeError("fetch failed"); });
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    await expect(client.get("/info/networks")).rejects.toMatchObject({
+      name: "AnsetaApiError",
+      status: 0,
+      code: "NETWORK_ERROR",
+    });
+  });
+});

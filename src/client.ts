@@ -1,5 +1,5 @@
 import { DEFAULT_BASE_URL } from "./constants.js";
-import { parseErrorBody } from "./errors.js";
+import { AnsetaApiError, parseErrorBody } from "./errors.js";
 
 export interface AnsetaClientOptions {
   apiKey: string;
@@ -42,10 +42,21 @@ export class AnsetaClient {
   private async request<T>(url: URL, init: RequestInit): Promise<T> {
     // The key travels as a header only. The spec also permits an `api_key`
     // query parameter; query strings land in access logs, so we never use it.
-    const response = await this.fetchImpl(url, {
-      ...init,
-      headers: { ...(init.headers ?? {}), "x-api-key": this.apiKey },
-    });
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, {
+        ...init,
+        headers: { ...(init.headers ?? {}), "x-api-key": this.apiKey },
+      });
+    } catch (error) {
+      // DNS failure, refused connection, TLS error. Status 0 marks "never reached
+      // the API" so the model is not told to fix its arguments.
+      throw new AnsetaApiError(
+        0,
+        "NETWORK_ERROR",
+        `Could not reach the Anseta API at ${url.origin}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
 
     const text = await response.text();
     let parsed: unknown;
