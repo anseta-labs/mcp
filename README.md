@@ -1,6 +1,6 @@
 # @anseta/mcp-server
 
-An MCP server that exposes the [Anseta](https://anseta.io) staking API to AI agents as 12 tools:
+An MCP server that exposes the [Anseta](https://anseta.com) staking API to AI agents as 12 tools:
 discovery of networks, tokens, validators and entities; staking positions and reward history; and
 construction of unsigned staking transactions.
 
