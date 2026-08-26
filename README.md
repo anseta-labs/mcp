@@ -1,4 +1,4 @@
-# @anseta/mcp-server
+# @anseta/mcp
 
 An MCP server that exposes the [Anseta](https://anseta.com) staking API to AI agents as 12 tools:
 discovery of networks, tokens, validators and entities; staking positions and reward history; and
@@ -15,7 +15,7 @@ Requires Node 20 or newer and an Anseta API key.
 ### Claude Code
 
 ```bash
-claude mcp add anseta --env ANSETA_API_KEY=your-key -- npx -y @anseta/mcp-server
+claude mcp add anseta --env ANSETA_API_KEY=your-key -- npx -y @anseta/mcp
 ```
 
 ### Claude Desktop / Cursor
@@ -27,7 +27,7 @@ Add to `claude_desktop_config.json` or `.cursor/mcp.json`:
   "mcpServers": {
     "anseta": {
       "command": "npx",
-      "args": ["-y", "@anseta/mcp-server"],
+      "args": ["-y", "@anseta/mcp"],
       "env": { "ANSETA_API_KEY": "your-key" }
     }
   }

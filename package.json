@@ -1,5 +1,5 @@
 {
-  "name": "@anseta/mcp-server",
+  "name": "@anseta/mcp",
   "version": "0.1.0",
   "description": "MCP server exposing the Anseta staking API as 12 curated tools",
   "scripts": {
