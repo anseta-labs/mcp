@@ -1,5 +1,9 @@
 # @anseta/mcp
 
+[![ci](https://github.com/anseta-labs/mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/anseta-labs/mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@anseta/mcp.svg)](https://www.npmjs.com/package/@anseta/mcp)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 An MCP server that exposes the [Anseta](https://anseta.com) staking API to AI agents as 12 tools:
 discovery of networks, tokens, validators and entities; staking positions and reward history; and
 construction of unsigned staking transactions.
