@@ -74,11 +74,11 @@ describe("staking read tools", () => {
   });
 
   it("projects stakes using the StakeSchema field names, keeping base-unit amounts", async () => {
-    const get = vi.fn(async () => [{
+    const get = vi.fn(async () => ({ stakes: [{
       network: "solana", token: "SOL", tokenAddress: null,
       stakerAddress: "DYw8", validatorAddress: "he1i", amount: "1000000000",
       status: "staked", rewards: "12500000", internalId: "drop-me",
-    }]);
+    }] }));
     const ctx = { client: { get } as unknown as AnsetaClient };
     const result = await toolNamed("get_stakes").handler(
       { staker: "DYw8", network: "solana", validator: "he1i", token: "SOL" }, ctx,
@@ -90,12 +90,26 @@ describe("staking read tools", () => {
     expect(text).not.toContain("internalId");
   });
 
-  it("get_stakes wraps a single non-array payload", async () => {
-    const get = vi.fn(async () => ({ network: "solana", token: "SOL", amount: "1", status: "staked" }));
+  it("get_stakes unwraps the data.stakes envelope", async () => {
+    const get = vi.fn(async () => ({ stakes: [
+      { network: "mantra", token: "MANTRA", stakerAddress: "mantra1fz9",
+        validatorAddress: "mantravaloper1r3s", amount: "11500000000002370806", status: "staked" },
+    ] }));
+    const ctx = { client: { get } as unknown as AnsetaClient };
+    const result = await toolNamed("get_stakes").handler(
+      { staker: "mantra1fz9", network: "mantra", validator: "mantravaloper1r3s", token: "MANTRA" }, ctx,
+    );
+    expect(result.content[0]!.text).toContain("11500000000002370806");
+  });
+
+  it("get_stakes degrades to empty when the envelope is missing", async () => {
+    const get = vi.fn(async () => null);
     const ctx = { client: { get } as unknown as AnsetaClient };
     const result = await toolNamed("get_stakes").handler(
       { staker: "a", network: "solana", validator: "v", token: "SOL" }, ctx,
     );
-    expect(result.content[0]!.text).toContain('"status": "staked"');
+    expect(result.content[0]!.text).toBe("[]");
+    expect(result.isError).toBeUndefined();
   });
+
 });

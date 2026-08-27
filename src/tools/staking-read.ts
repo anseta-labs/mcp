@@ -60,13 +60,14 @@ export const stakingReadTools: AnsetaTool[] = [
     },
     handler: (args, ctx: ToolContext) =>
       guard(async () => {
-        const rows = await ctx.client.get<unknown>("/staking/stakes", {
+        // This endpoint nests its array under `data.stakes`.
+        const data = await ctx.client.get<{ stakes?: unknown[] } | null>("/staking/stakes", {
           staker: args.staker as string,
           network: args.network as string,
           validator: args.validator as string,
           token: args.token as string,
         });
-        return listed(rows, STAKE_FIELDS);
+        return listed(data?.stakes ?? [], STAKE_FIELDS);
       }),
   },
   {
