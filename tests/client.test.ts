@@ -3,7 +3,7 @@ import { AnsetaClient } from "../src/client.js";
 import { AnsetaApiError } from "../src/errors.js";
 
 function stubFetch(status: number, body: unknown) {
-  return vi.fn(async () =>
+  return vi.fn<typeof fetch>(async () =>
     new Response(typeof body === "string" ? body : JSON.stringify(body), {
       status,
       headers: { "content-type": "application/json" },
@@ -14,7 +14,7 @@ function stubFetch(status: number, body: unknown) {
 describe("AnsetaClient", () => {
   it("sends the API key in the x-api-key header, never the query string", async () => {
     const fetchImpl = stubFetch(200, { success: true, data: [] });
-    const client = new AnsetaClient({ apiKey: "secret-key", fetchImpl: fetchImpl as unknown as typeof fetch });
+    const client = new AnsetaClient({ apiKey: "secret-key", fetchImpl: fetchImpl });
     await client.get("/info/networks");
 
     const [url, init] = fetchImpl.mock.calls[0]!;
@@ -24,7 +24,7 @@ describe("AnsetaClient", () => {
 
   it("omits undefined query params and stringifies numbers", async () => {
     const fetchImpl = stubFetch(200, { success: true, data: [] });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl });
     await client.get("/staking/daily-reward-history/v1", { limit: 25, startDate: undefined });
 
     const url = String(fetchImpl.mock.calls[0]![0]);
@@ -34,20 +34,20 @@ describe("AnsetaClient", () => {
 
   it("throws AnsetaApiError on a non-2xx response", async () => {
     const fetchImpl = stubFetch(400, { success: false, error: { code: "BAD", message: "nope" } });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl });
     await expect(client.get("/info/networks")).rejects.toBeInstanceOf(AnsetaApiError);
   });
 
   it("unwraps the success envelope and returns data", async () => {
     const fetchImpl = stubFetch(200, { success: true, data: [{ network: "solana" }] });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    const result = await client.get<Array<{ network: string }>>("/info/networks");
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl });
+    const result = await client.get("/info/networks");
     expect(result).toEqual([{ network: "solana" }]);
   });
 
   it("posts JSON bodies", async () => {
     const fetchImpl = stubFetch(200, { success: true, data: { transactions: [] } });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl });
     await client.post("/staking/stake", { network: "solana" });
 
     const init = fetchImpl.mock.calls[0]![1] as RequestInit;
@@ -59,7 +59,7 @@ describe("AnsetaClient", () => {
 describe("AnsetaClient transport failures", () => {
   it("translates a thrown fetch into an AnsetaApiError with status 0", async () => {
     const fetchImpl = vi.fn(async () => { throw new TypeError("fetch failed"); });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
+    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl });
     await expect(client.get("/info/networks")).rejects.toMatchObject({
       name: "AnsetaApiError",
       status: 0,

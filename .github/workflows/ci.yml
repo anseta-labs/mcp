@@ -9,5 +9,6 @@ jobs:
         with: { node-version: "20", cache: "npm" }
       - run: npm ci
       - run: npx tsc --noEmit
+      - run: npx tsc -p tsconfig.test.json
       - run: npx vitest run
       - run: npx tsup src/stdio.ts src/index.ts --format esm --dts --clean

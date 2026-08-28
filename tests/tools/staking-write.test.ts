@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { stakingWriteTools, validateStakeArgs } from "../../src/tools/staking-write.js";
-import type { AnsetaClient } from "../../src/client.js";
+import { stubClient } from "../support.js";
+import type { AnsetaApi } from "../../src/client.js";
 
 function toolNamed(name: string) {
   const tool = stakingWriteTools.find((t) => t.name === name);
@@ -28,9 +29,14 @@ describe("validateStakeArgs", () => {
     expect(msg).toContain("base denomination");
   });
 
-  it("rejects a numeric amount, which loses precision", () => {
-    const msg = validateStakeArgs({ network: "solana", token: "SOL", staker: "a", validator: "v", amount: 1000000000 });
-    expect(msg).toContain("string");
+  it("rejects a numeric amount at the schema boundary", async () => {
+    const ctx = stubClient({});
+    await expect(
+      toolNamed("build_stake_tx").handler(
+        { network: "solana", token: "SOL", staker: "a", validator: "v", amount: 1000000000 },
+        ctx,
+      ),
+    ).rejects.toThrow();
   });
 
   it("accepts a well-formed request", () => {
@@ -48,8 +54,8 @@ describe("write tools", () => {
   });
 
   it("returns a validation error without calling the API", async () => {
-    const post = vi.fn();
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>();
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", amount: "1000" }, ctx,
     );
@@ -58,8 +64,8 @@ describe("write tools", () => {
   });
 
   it("echoes decoded parameters alongside the transaction", async () => {
-    const post = vi.fn(async () => ({ transactions: [{ type: "Delegate", encodedTx: "0xdead", transactionType: "solana", encodingFormat: "base58" }] }));
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>(async () => ({ transactions: [{ type: "Delegate", encodedTx: "0xdead", transactionType: "solana", encodingFormat: "base58" }] }));
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000", decimals: 9 }, ctx,
     );
@@ -71,8 +77,8 @@ describe("write tools", () => {
   });
 
   it("does not send the display-only decimals field to the API", async () => {
-    const post = vi.fn(async () => ({ transactions: [] }));
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>(async () => ({ transactions: [] }));
+    const ctx = stubClient({ post });
     await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000", decimals: 9 }, ctx,
     );
@@ -82,8 +88,8 @@ describe("write tools", () => {
   });
 
   it("formats fractional amounts correctly", async () => {
-    const post = vi.fn(async () => ({ transactions: [] }));
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>(async () => ({ transactions: [] }));
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000", decimals: 9 }, ctx,
     );
@@ -91,8 +97,8 @@ describe("write tools", () => {
   });
 
   it("says the amount is undecodable when decimals are not supplied", async () => {
-    const post = vi.fn(async () => ({ transactions: [] }));
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>(async () => ({ transactions: [] }));
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000" }, ctx,
     );
@@ -100,8 +106,8 @@ describe("write tools", () => {
   });
 
   it("states that the transaction is unsigned", async () => {
-    const post = vi.fn(async () => ({ transactions: [] }));
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>(async () => ({ transactions: [] }));
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_unstake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1" }, ctx,
     );
@@ -113,8 +119,8 @@ describe("write tools", () => {
   });
 
   it("build_withdraw_tx still enforces the validator requirement", async () => {
-    const post = vi.fn();
-    const ctx = { client: { post } as unknown as AnsetaClient };
+    const post = vi.fn<AnsetaApi["post"]>();
+    const ctx = stubClient({ post });
     const result = await toolNamed("build_withdraw_tx").handler(
       { network: "solana", token: "SOL", staker: "abc" }, ctx,
     );
