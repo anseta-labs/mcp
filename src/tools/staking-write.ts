@@ -2,7 +2,8 @@ import { z } from "zod";
 import { VALIDATOR_REQUIRED_NETWORKS, AMOUNT_OPTIONAL_NETWORKS } from "../constants.js";
 import { guard } from "./shared.js";
 import { toToolResult, errorResult, sanitize } from "../format.js";
-import type { AnsetaTool, ToolContext } from "./types.js";
+import { defineTool } from "./types.js";
+import type { AnsetaTool, ToolContext, ToolArgs } from "./types.js";
 
 const BASE_UNIT_PATTERN = /^\d+$/;
 
@@ -11,7 +12,7 @@ const BASE_UNIT_PATTERN = /^\d+$/;
  * express: SimplifiedStakeRequest lists only network/token/staker as required,
  * but `validator` is mandatory on most networks and `amount` on all but Cardano.
  */
-export function validateStakeArgs(args: Record<string, unknown>): string | null {
+export function validateStakeArgs(args: StakeArgs): string | null {
   const network = String(args.network ?? "");
   const needsValidator = (VALIDATOR_REQUIRED_NETWORKS as readonly string[]).includes(network);
   const amountOptional = (AMOUNT_OPTIONAL_NETWORKS as readonly string[]).includes(network);
@@ -40,7 +41,7 @@ function humanAmount(amount: unknown, decimals: unknown, token: unknown): string
   return `${whole}${frac ? "." + frac : ""} ${String(token)}`;
 }
 
-function buildResult(action: string, args: Record<string, unknown>, payload: unknown) {
+function buildResult(action: string, args: StakeArgs, payload: unknown) {
   const review = [
     `REVIEW BEFORE SIGNING - ${action}`,
     `  network:   ${String(args.network)}`,
@@ -64,11 +65,13 @@ const commonSchema = {
   params: z.record(z.string(), z.unknown()).optional().describe("Additional network-specific parameters."),
 };
 
+type StakeArgs = ToolArgs<typeof commonSchema> & { amount?: string };
+
 const amountSchema = z.string().describe(
   "Amount in the token's BASE denomination as an integer string, not a decimal token value. 1 SOL (9 decimals) is '1000000000'. Required on every network except Cardano.",
 );
 
-function apiBody(args: Record<string, unknown>, includeAmount: boolean) {
+function apiBody(args: StakeArgs, includeAmount: boolean) {
   const body: Record<string, unknown> = {
     network: args.network, token: args.token, staker: args.staker,
   };
@@ -79,7 +82,7 @@ function apiBody(args: Record<string, unknown>, includeAmount: boolean) {
 }
 
 export const stakingWriteTools: AnsetaTool[] = [
-  {
+  defineTool({
     name: "build_stake_tx",
     description:
       "Build unsigned transactions that delegate tokens to a validator. Returns transaction objects for the user to review and sign in their own wallet; nothing is broadcast and no funds move as a result of this call. Amount must be an integer string in the token's base denomination - call list_tokens for the decimals. Confirm the validator with list_validators first.",
@@ -91,8 +94,8 @@ export const stakingWriteTools: AnsetaTool[] = [
         const payload = await ctx.client.post("/staking/stake", apiBody(args, true));
         return buildResult("STAKE", args, payload);
       }),
-  },
-  {
+  }),
+  defineTool({
     name: "build_unstake_tx",
     description:
       "Build unsigned transactions that begin unbonding a delegation. This starts the unbonding period; it does NOT move tokens back to the wallet. After unbonding completes, use build_withdraw_tx to claim them. Amount must be an integer string in the token's base denomination. Returns unsigned transactions for the user to sign; nothing is broadcast.",
@@ -104,8 +107,8 @@ export const stakingWriteTools: AnsetaTool[] = [
         const payload = await ctx.client.post("/staking/unstake", apiBody(args, true));
         return buildResult("UNSTAKE (begins unbonding)", args, payload);
       }),
-  },
-  {
+  }),
+  defineTool({
     name: "build_withdraw_tx",
     description:
       "Build unsigned transactions that claim tokens whose unbonding period has finished, or claim accrued rewards. This is the step AFTER build_unstake_tx, not a substitute for it: unstaking alone does not return tokens to the wallet. Takes no amount - it claims whatever is available. Returns unsigned transactions for the user to sign; nothing is broadcast.",
@@ -120,5 +123,5 @@ export const stakingWriteTools: AnsetaTool[] = [
         const payload = await ctx.client.post("/staking/withdraw", apiBody(args, false));
         return buildResult("WITHDRAW (claims unbonded tokens or rewards)", args, payload);
       }),
-  },
+  }),
 ];
