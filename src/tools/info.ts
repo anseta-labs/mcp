@@ -68,10 +68,10 @@ export const infoTools: AnsetaTool[] = [
   defineTool({
     name: "list_tokens",
     description:
-      "List stakeable and restakeable tokens with their symbol, network, and decimals. The 'decimals' value is essential: every amount passed to a transaction builder must be a string in the token's base denomination, so 1 SOL with 9 decimals is '1000000000'. Call this before building any transaction unless the decimals for that token are already known.",
+      "List stakeable tokens with their symbol, network, and decimals. The 'decimals' value is essential: every amount passed to a transaction builder must be a string in the token's base denomination, so 1 SOL with 9 decimals is '1000000000'. Call this before building any transaction unless the decimals for that token are already known.",
     schema: {
-      network: discoveryNetworkArg.optional().describe("Filter by staking or restaking network identifier."),
-      symbol: discoveryTokenArg.optional().describe("Filter by token symbol, e.g. 'SOL' or 'STETH'."),
+      network: discoveryNetworkArg.optional().describe("Filter by network identifier."),
+      symbol: discoveryTokenArg.optional().describe("Filter by token symbol, e.g. 'SOL'."),
       testnet: z.enum(["true", "false"]).optional(),
       tokenAddress: z.string().optional().describe("Filter by token contract address."),
     },
