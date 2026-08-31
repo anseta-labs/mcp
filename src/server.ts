@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { AnsetaClient } from "./client.js";
+import { createApis } from "./client.js";
 import { allTools } from "./tools/index.js";
 
 export interface ServerConfig { apiKey: string; baseUrl?: string }
@@ -9,14 +9,14 @@ export interface ServerConfig { apiKey: string; baseUrl?: string }
  * purpose: the stdio binary and any future hosted HTTP service both call this.
  */
 export function createAnsetaServer(config: ServerConfig): McpServer {
-  const client = new AnsetaClient({ apiKey: config.apiKey, baseUrl: config.baseUrl });
+  const apis = createApis({ apiKey: config.apiKey, baseUrl: config.baseUrl });
   const server = new McpServer({ name: "anseta", version: "0.1.0" });
 
   for (const tool of allTools) {
     server.registerTool(
       tool.name,
       { description: tool.description, inputSchema: tool.schema },
-      (args) => tool.handler(args as Record<string, unknown>, { client }),
+      (args) => tool.handler(args as Record<string, unknown>, apis),
     );
   }
   return server;

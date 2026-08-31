@@ -2,6 +2,7 @@ import { z } from "zod";
 import { VALIDATOR_REQUIRED_NETWORKS, AMOUNT_OPTIONAL_NETWORKS } from "../constants.js";
 import { guard } from "./shared.js";
 import { toToolResult, errorResult, sanitize } from "../format.js";
+import type { SimplifiedStakeRequest } from "@anseta/typescript-sdk";
 import { defineTool } from "./types.js";
 import type { AnsetaTool, ToolContext, ToolArgs } from "./types.js";
 
@@ -71,14 +72,15 @@ const amountSchema = z.string().describe(
   "Amount in the token's BASE denomination as an integer string, not a decimal token value. 1 SOL (9 decimals) is '1000000000'. Required on every network except Cardano.",
 );
 
-function apiBody(args: StakeArgs, includeAmount: boolean) {
-  const body: Record<string, unknown> = {
-    network: args.network, token: args.token, staker: args.staker,
+function apiBody(args: StakeArgs, includeAmount: boolean): SimplifiedStakeRequest {
+  return {
+    network: args.network as SimplifiedStakeRequest["network"],
+    token: args.token as SimplifiedStakeRequest["token"],
+    staker: args.staker,
+    ...(args.validator ? { validator: args.validator } : {}),
+    ...(includeAmount && args.amount ? { amount: args.amount } : {}),
+    ...(args.params ? { params: args.params } : {}),
   };
-  if (args.validator) body.validator = args.validator;
-  if (includeAmount && args.amount) body.amount = args.amount;
-  if (args.params) body.params = args.params;
-  return body;
 }
 
 export const stakingWriteTools: AnsetaTool[] = [
@@ -91,7 +93,9 @@ export const stakingWriteTools: AnsetaTool[] = [
       guard(async () => {
         const invalid = validateStakeArgs(args);
         if (invalid) return errorResult(invalid);
-        const payload = await ctx.client.post("/staking/stake", apiBody(args, true));
+        const payload = await ctx.staking.createStake({
+          simplifiedStakeRequest: apiBody(args, true),
+        });
         return buildResult("STAKE", args, payload);
       }),
   }),
@@ -104,7 +108,9 @@ export const stakingWriteTools: AnsetaTool[] = [
       guard(async () => {
         const invalid = validateStakeArgs(args);
         if (invalid) return errorResult(invalid);
-        const payload = await ctx.client.post("/staking/unstake", apiBody(args, true));
+        const payload = await ctx.staking.createUnstake({
+          simplifiedStakeRequest: apiBody(args, true),
+        });
         return buildResult("UNSTAKE (begins unbonding)", args, payload);
       }),
   }),
@@ -120,7 +126,9 @@ export const stakingWriteTools: AnsetaTool[] = [
             `Network '${String(args.network)}' requires a 'validator' argument. Call list_validators with network='${String(args.network)}' to find one.`,
           );
         }
-        const payload = await ctx.client.post("/staking/withdraw", apiBody(args, false));
+        const payload = await ctx.staking.createStakingWithdrawal({
+          createStakingWithdrawalRequest: apiBody(args, false),
+        });
         return buildResult("WITHDRAW (claims unbonded tokens or rewards)", args, payload);
       }),
   }),

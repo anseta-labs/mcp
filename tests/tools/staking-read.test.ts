@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { stakingReadTools } from "../../src/tools/staking-read.js";
-import { stubClient } from "../support.js";
-import type { AnsetaApi } from "../../src/client.js";
+import { stubApis } from "../support.js";
+
 
 function toolNamed(name: string) {
   const tool = stakingReadTools.find((t) => t.name === name);
@@ -29,43 +29,44 @@ describe("staking read tools", () => {
   });
 
   it("get_daily_rewards defaults limit to 25 and sends it as a string-safe value", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => []);
-    const ctx = stubClient({ get });
+    const getStakingDailyRewards = vi.fn(async () => ({ success: true, data: [] }));
+    const ctx = stubApis({ getStakingDailyRewards });
     await toolNamed("get_daily_rewards").handler({ validatorId: "v-1" }, ctx);
-    expect(get).toHaveBeenCalledWith(
-      "/staking/daily-reward-history/v-1",
-      expect.objectContaining({ limit: 25 }),
+    expect(getStakingDailyRewards).toHaveBeenCalledWith(
+      expect.objectContaining({ validatorId: "v-1", limit: "25" }),
     );
   });
 
-  it("url-encodes identifiers in the path", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => []);
-    const ctx = stubClient({ get });
+  it("passes the validator id to the SDK, which owns path encoding", async () => {
+    const getStakingRewardHistory = vi.fn(async () => ({ success: true, data: [] }));
+    const ctx = stubApis({ getStakingRewardHistory });
     await toolNamed("get_reward_history").handler({ validatorId: "a/b" }, ctx);
-    expect(get.mock.calls[0]![0]).toBe("/staking/withdraw-rewards-tx-history/a%2Fb");
+    expect(getStakingRewardHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ validatorId: "a/b" }),
+    );
   });
 
   it("prefers formatted amounts over raw base units in history output", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => [{
+    const getStakingDelegationHistory = vi.fn(async () => ({ success: true, data: [{
       validatorId: "v-1", amount: "1000000000", amountFormatted: "1.0",
       tokenSymbol: "SOL", timestamp: "2026-01-01T00:00:00Z", eventType: "delegate",
       transactionHash: "0xdead", network: "solana", blockNumber: "12345",
       delegatorAddress: "abc", validatorAddress: "def", decimals: 9,
-    }]);
-    const ctx = stubClient({ get });
+    }] }));
+    const ctx = stubApis({ getStakingDelegationHistory });
     const result = await toolNamed("get_delegation_history").handler({ validatorId: "v-1" }, ctx);
     expect(result.content[0]!.text).toContain("amountFormatted");
     expect(result.content[0]!.text).not.toContain("blockNumber");
   });
 
   it("projects validators using the real upstream field names", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => [{
+    const getValidators = vi.fn(async () => ({ success: true, data: [{
       validatorId: "solana-abc", validatorAddress: "abc", moniker: "Example",
       status: "LIVE", network: { name: "solana", type: "mainnet", tokenSymbol: "SOL", decimals: 9 },
       commissionRate: "0.05", publicDelegationEnabled: true, website: "https://x.invalid",
       ownerAddress: "owner", stakingContract: "contract", details: "long text",
-    }]);
-    const ctx = stubClient({ get });
+    }] }));
+    const ctx = stubApis({ getValidators });
     const result = await toolNamed("list_validators").handler({ network: "solana" }, ctx);
     const text = result.content[0]!.text;
     expect(text).toContain("validatorId");
@@ -75,12 +76,12 @@ describe("staking read tools", () => {
   });
 
   it("projects stakes using the StakeSchema field names, keeping base-unit amounts", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => ({ stakes: [{
+    const getStakingPositions = vi.fn(async () => ({ success: true, data: { stakes: [{
       network: "solana", token: "SOL", tokenAddress: null,
       stakerAddress: "DYw8", validatorAddress: "he1i", amount: "1000000000",
       status: "staked", rewards: "12500000", internalId: "drop-me",
-    }] }));
-    const ctx = stubClient({ get });
+    }] } }));
+    const ctx = stubApis({ getStakingPositions });
     const result = await toolNamed("get_stakes").handler(
       { staker: "DYw8", network: "solana", validator: "he1i", token: "SOL" }, ctx,
     );
@@ -92,11 +93,11 @@ describe("staking read tools", () => {
   });
 
   it("get_stakes unwraps the data.stakes envelope", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => ({ stakes: [
+    const getStakingPositions = vi.fn(async () => ({ success: true, data: { stakes: [
       { network: "mantra", token: "MANTRA", stakerAddress: "mantra1fz9",
         validatorAddress: "mantravaloper1r3s", amount: "11500000000002370806", status: "staked" },
-    ] }));
-    const ctx = stubClient({ get });
+    ] } }));
+    const ctx = stubApis({ getStakingPositions });
     const result = await toolNamed("get_stakes").handler(
       { staker: "mantra1fz9", network: "mantra", validator: "mantravaloper1r3s", token: "MANTRA" }, ctx,
     );
@@ -104,8 +105,8 @@ describe("staking read tools", () => {
   });
 
   it("get_stakes degrades to empty when the envelope is missing", async () => {
-    const get = vi.fn<AnsetaApi["get"]>(async () => null);
-    const ctx = stubClient({ get });
+    const getStakingPositions = vi.fn(async () => ({ success: true, data: undefined }));
+    const ctx = stubApis({ getStakingPositions });
     const result = await toolNamed("get_stakes").handler(
       { staker: "a", network: "solana", validator: "v", token: "SOL" }, ctx,
     );

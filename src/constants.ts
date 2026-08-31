@@ -1,22 +1,6 @@
-export const DEFAULT_BASE_URL = "https://preview.api.stakefi.network/v1";
+export const DEFAULT_BASE_URL = "https://preview.api.stakefi.network";
 export const MAX_LIST_ITEMS = 25;
 export const MAX_FIELD_CHARS = 300;
-
-/** Networks accepted by GET /v1/staking/stakes — a subset of the full network list. */
-export const STAKES_NETWORKS = [
-  "ethereum", "solana", "somnia", "monad", "mantra", "nillion", "kaia",
-  "cardano", "sonic", "near", "aptos", "zenrock",
-  "solana-testnet", "sonic-testnet", "somnia-testnet",
-  "ethereum-sepolia-testnet", "mantra-testnet", "monad-testnet",
-  "hedera-testnet", "nillion-testnet", "kaia-kairos-testnet",
-  "cardano-testnet", "zenrock-testnet",
-] as const;
-
-/** Tokens accepted by GET /v1/staking/stakes. */
-export const STAKES_TOKENS = [
-  "POL", "SOL", "SOMI", "MON", "MANTRA", "NILL", "KAIA",
-  "ADA", "S", "NEAR", "APT", "ROCK", "HBAR",
-] as const;
 
 /**
  * Networks where SimplifiedStakeRequest.validator is mandatory. The OpenAPI

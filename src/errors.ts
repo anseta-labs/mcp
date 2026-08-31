@@ -1,9 +1,16 @@
+import { ResponseError } from "@anseta/typescript-sdk";
+
 export class AnsetaApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly details: unknown;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+  ) {
     super(message);
     this.name = "AnsetaApiError";
     this.status = status;
@@ -33,11 +40,14 @@ export class AnsetaApiError extends Error {
   }
 }
 
-function isErrorEnvelope(body: unknown): body is { error: { code: string; message: string; details?: unknown } } {
+function isErrorEnvelope(
+  body: unknown,
+): body is { error: { code: string; message: string; details?: unknown } } {
   if (typeof body !== "object" || body === null) return false;
   const err = (body as Record<string, unknown>).error;
   return (
-    typeof err === "object" && err !== null &&
+    typeof err === "object" &&
+    err !== null &&
     typeof (err as Record<string, unknown>).code === "string" &&
     typeof (err as Record<string, unknown>).message === "string"
   );
@@ -45,7 +55,43 @@ function isErrorEnvelope(body: unknown): body is { error: { code: string; messag
 
 export function parseErrorBody(status: number, body: unknown): AnsetaApiError {
   if (isErrorEnvelope(body)) {
-    return new AnsetaApiError(status, body.error.code, body.error.message, body.error.details);
+    return new AnsetaApiError(
+      status,
+      body.error.code,
+      body.error.message,
+      body.error.details,
+    );
   }
-  return new AnsetaApiError(status, "UPSTREAM_ERROR", `Request failed with status ${status}`, body);
+  return new AnsetaApiError(
+    status,
+    "UPSTREAM_ERROR",
+    `Request failed with status ${status}`,
+    body,
+  );
+}
+
+/**
+ * Translates whatever the SDK threw into an AnsetaApiError, so the model gets
+ * text saying whether retrying helps rather than a stack trace.
+ *
+ * ResponseError carries the raw Response, so the API's error envelope has to be
+ * read off the body here. A body that cannot be read is not worth failing over:
+ * the status alone still produces a useful message.
+ */
+export async function toAnsetaError(error: unknown): Promise<AnsetaApiError> {
+  if (error instanceof AnsetaApiError) return error;
+
+  if (error instanceof ResponseError) {
+    let body: unknown;
+    try {
+      body = await error.response.clone().json();
+    } catch {
+      body = undefined;
+    }
+    return parseErrorBody(error.response.status, body);
+  }
+
+  // No response at all: DNS failure, refused connection, a bad base URL.
+  const message = error instanceof Error ? error.message : String(error);
+  return new AnsetaApiError(0, "NETWORK_ERROR", message);
 }

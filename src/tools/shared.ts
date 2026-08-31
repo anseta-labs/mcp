@@ -1,4 +1,4 @@
-import { AnsetaApiError } from "../errors.js";
+import { toAnsetaError } from "../errors.js";
 import { capList, project, toToolResult, errorResult } from "../format.js";
 import type { ToolResult } from "./types.js";
 
@@ -7,8 +7,7 @@ export async function guard(fn: () => Promise<ToolResult>): Promise<ToolResult> 
   try {
     return await fn();
   } catch (error) {
-    if (error instanceof AnsetaApiError) return errorResult(error.toModelMessage());
-    return errorResult(`Unexpected failure: ${error instanceof Error ? error.message : String(error)}`);
+    return errorResult((await toAnsetaError(error)).toModelMessage());
   }
 }
 

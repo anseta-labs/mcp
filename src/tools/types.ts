@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { AnsetaApi } from "../client.js";
+import type { AnsetaApis } from "../client.js";
 
-export interface ToolContext { client: AnsetaApi }
+export type ToolContext = AnsetaApis;
 
 /**
  * The MCP SDK's CallToolResult carries an open index signature, so ours does
