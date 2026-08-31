@@ -18,8 +18,10 @@ coverage/
 .env.*
 !.env.example
 
-# AI assistants. Project-level config (CLAUDE.md, .claude/agents, .claude/skills)
-# is deliberately committed; only the per-developer and generated parts are not.
+# AI assistants. Agent guidance is local, not part of the repo: CLAUDE.md is
+# working notes rather than a contract, and rules that must hold belong in
+# eslint.config.js or the README where every contributor sees them.
+CLAUDE.md
 .claude/settings.local.json
 .claude/*.local.json
 CLAUDE.local.md
