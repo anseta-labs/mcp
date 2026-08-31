@@ -13,9 +13,10 @@ function toolNamed(name: string) {
 }
 
 const BASE = { network: "solana", token: "SOL", staker: "abc", decimals: 9 } as const;
+const TXS = { success: true, data: { transactions: [{ encodedTx: "0xdead" }] } };
 
 async function callStake(args: Record<string, unknown>) {
-  const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+  const post = vi.fn(async () => TXS);
   const result = await toolNamed("build_stake_tx").handler({ ...BASE, ...args }, stubApis({ createStake: post }));
 
   return { text: result.content[0]!.text, isError: result.isError === true, post };
@@ -53,6 +54,19 @@ describe("argument rules", () => {
     const { text, isError, post } = await callStake({ validator: "v", amount: 1000000000 });
     expect(isError).toBe(true);
     expect(text).toContain("Invalid arguments");
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("rejects negative token decimals before calling the API", async () => {
+    const { text, isError, post } = await callStake({
+      validator: "v",
+      amount: "1",
+      decimals: -1,
+    });
+
+    expect(isError).toBe(true);
+    expect(text).toContain("expected number to be >=0");
+    expect(text).toContain("decimals");
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -101,7 +115,7 @@ describe("write tools", () => {
   });
 
   it("does not send the display-only decimals field to the API", async () => {
-    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const post = vi.fn(async () => TXS);
     const ctx = stubApis({ createStake: post });
     await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000", decimals: 9 }, ctx,
@@ -115,7 +129,7 @@ describe("write tools", () => {
   });
 
   it("formats fractional amounts correctly", async () => {
-    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const post = vi.fn(async () => TXS);
     const ctx = stubApis({ createStake: post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000", decimals: 9 }, ctx,
@@ -125,7 +139,7 @@ describe("write tools", () => {
   });
 
   it("says the amount is undecodable when decimals are not supplied", async () => {
-    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const post = vi.fn(async () => TXS);
     const ctx = stubApis({ createStake: post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000" }, ctx,
@@ -138,19 +152,29 @@ describe("write tools", () => {
     expect(post).toHaveBeenCalled();
   });
 
-  it("surfaces a 200 that carries success:false instead of showing a transaction to sign", async () => {
-    const post = vi.fn(async () => ({
-      success: false,
-      error: { code: "UNSUPPORTED_NETWORK", message: "staking is not live for this pair" },
-    }));
-
+  it("rejects a success response that has no transaction data", async () => {
+    const post = vi.fn(async () => ({ success: true, data: undefined }));
     const ctx = stubApis({ createStake: post });
     const result = await toolNamed("build_stake_tx").handler(
-      { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 }, ctx,
+      { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 },
+      ctx,
     );
 
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("staking is not live for this pair");
+    expect(result.content[0]!.text).toContain("did not return any transactions");
+    expect(result.content[0]!.text).not.toContain("REVIEW BEFORE SIGNING");
+  });
+
+  it("rejects a success response with an empty transaction list", async () => {
+    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const ctx = stubApis({ createStake: post });
+    const result = await toolNamed("build_stake_tx").handler(
+      { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 },
+      ctx,
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("did not return any transactions");
     expect(result.content[0]!.text).not.toContain("REVIEW BEFORE SIGNING");
   });
 
@@ -165,8 +189,21 @@ describe("write tools", () => {
     expect(JSON.parse(body)).toEqual({ transactions: [{ encodedTx: "0xdead" }] });
   });
 
+  it("preserves long encoded transactions byte-for-byte", async () => {
+    const encodedTx = `0x${"ab".repeat(400)}`;
+    const post = vi.fn(async () => ({ success: true, data: { transactions: [{ encodedTx }] } }));
+    const ctx = stubApis({ createStake: post });
+    const result = await toolNamed("build_stake_tx").handler(
+      { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 },
+      ctx,
+    );
+
+    const body = result.content[0]!.text.split("\n\nREVIEW")[0]!;
+    expect(JSON.parse(body)).toEqual({ transactions: [{ encodedTx }] });
+  });
+
   it("states that the transaction is unsigned", async () => {
-    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const post = vi.fn(async () => TXS);
     const ctx = stubApis({ createUnstake: post });
     const result = await toolNamed("build_unstake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 }, ctx,
@@ -200,7 +237,7 @@ describe("build_withdraw_tx", () => {
   it("does not demand an amount on a network where staking requires one", async () => {
     // Withdrawal claims whatever is available, so the amount rule must not
     // apply to it — Solana requires an amount to stake but not to withdraw.
-    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const post = vi.fn(async () => TXS);
     const ctx = stubApis({ createStakingWithdrawal: post });
     const result = await toolNamed("build_withdraw_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1" }, ctx,

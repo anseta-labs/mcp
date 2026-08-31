@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
 import { NETWORK_RULES } from "../constants.js";
-import { ToolArgumentError, parseErrorBody } from "../errors.js";
+import { ToolArgumentError } from "../errors.js";
 import { amountArg, decimalsArg } from "./args.js";
 import { buildTxResult, reviewAmount } from "./review.js";
 import { defineTool } from "./types.js";
@@ -81,7 +81,7 @@ export const stakingWriteTools: AnsetaTool[] = [
   defineTool({
     name: "build_stake_tx",
     description:
-      "Build unsigned transactions that delegate tokens to a validator. Returns transaction objects for the user to review and sign in their own wallet; nothing is broadcast and no funds move as a result of this call. Amount must be an integer string in the token's base denomination - call list_tokens for the decimals. Confirm the validator with list_validators first.",
+      "Build unsigned transactions that delegate tokens to a validator. Returns transaction objects for the user to review and sign in their own wallet; nothing is broadcast and no funds move as a result of this call. Amount must be an integer string in the token's base denomination - call list_tokens for the decimals. Look the validator up with list_validators first, remembering that a validator appearing there is not a guarantee that staking is available for it.",
     schema: stakeSchema,
     handler: async (args, ctx) => {
       assertStakeRules(args);
@@ -96,10 +96,6 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
-
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
 
       return buildTxResult("STAKE", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
@@ -123,10 +119,6 @@ export const stakingWriteTools: AnsetaTool[] = [
         },
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
       return buildTxResult("UNSTAKE (begins unbonding)", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
   }),
@@ -147,10 +139,6 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
-
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
 
       return buildTxResult(
         "WITHDRAW (claims unbonded tokens or rewards)",

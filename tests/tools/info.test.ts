@@ -30,6 +30,28 @@ describe("info tools", () => {
     expect(toolNamed("list_tokens").description).toContain("decimals");
   });
 
+  it("accepts restaking network and token filters in discovery tools", async () => {
+    const getTokens = vi.fn(async () => ({ success: true, data: [] }));
+    const getStakingOptions = vi.fn(async () => ({ success: true, data: [] }));
+    const ctx = stubApis({ getTokens, getStakingOptions });
+
+    const filters = { network: "ethereum-hoodi-testnet", symbol: "STETH" };
+    const tokenResult = await toolNamed("list_tokens").handler(filters, ctx);
+    const optionResult = await toolNamed("list_staking_options").handler(
+      { network: filters.network, token: filters.symbol, protocol: "eigenlayer" },
+      ctx,
+    );
+
+    expect(tokenResult.isError).toBeUndefined();
+    expect(optionResult.isError).toBeUndefined();
+    expect(getTokens).toHaveBeenCalledWith(expect.objectContaining(filters));
+    expect(getStakingOptions).toHaveBeenCalledWith(expect.objectContaining({
+      network: filters.network,
+      token: filters.symbol,
+      protocol: "eigenlayer",
+    }));
+  });
+
   it("list_networks passes filters through to the client", async () => {
     const getNetworks = vi.fn(async () => ({
       success: true,
@@ -64,12 +86,12 @@ describe("info tools", () => {
     expect(result.content[0]!.text).toContain("Check the arguments");
   });
 
-  it("notes truncation when the list is capped", async () => {
+  it("returns every upstream row", async () => {
     const rows = Array.from({ length: 40 }, (_, i) => ({ symbol: `T${i}`, network: "x", decimals: 6 }));
     const getTokens = vi.fn(async () => ({ success: true, data: rows }));
     const ctx = stubApis({ getTokens });
     const result = await toolNamed("list_tokens").handler({}, ctx);
-    expect(result.content[0]!.text).toContain("Showing 25 of 40");
+    expect(JSON.parse(result.content[0]!.text)).toHaveLength(40);
   });
 
   it("tolerates a null or non-array payload", async () => {

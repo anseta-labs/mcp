@@ -1,7 +1,7 @@
 {
   "name": "@anseta/mcp",
   "version": "0.2.0",
-  "description": "MCP server exposing the Anseta staking API as 12 curated tools",
+  "description": "MCP server exposing the Anseta staking API as 22 curated tools",
   "scripts": {
     "test": "vitest run",
     "capture:fixtures": "tsx scripts/capture-fixtures.ts",
