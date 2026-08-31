@@ -7,8 +7,9 @@
     "capture:fixtures": "tsx scripts/capture-fixtures.ts",
     "build": "tsup src/stdio.ts src/index.ts --format esm --dts --clean",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run test && npm run build",
-    "typecheck:tests": "tsc -p tsconfig.test.json"
+    "prepublishOnly": "pnpm run test && pnpm run build",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
+    "lint": "eslint ."
   },
   "keywords": [
     "mcp",
@@ -31,10 +32,13 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/node": "^26.3.0",
+    "eslint": "^9.39.5",
     "tsup": "^8.5.1",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.68.0",
     "vitest": "^4.1.11"
   },
   "repository": {
@@ -50,5 +54,11 @@
   "types": "./dist/index.d.ts",
   "publishConfig": {
     "access": "public"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

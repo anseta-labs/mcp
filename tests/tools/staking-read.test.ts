@@ -23,9 +23,10 @@ describe("staking read tools", () => {
   });
 
   it("get_stakes rejects a network outside the supported subset", () => {
-    const schema = toolNamed("get_stakes").schema;
-    expect(() => (schema.network as any).parse("tezos")).toThrow();
-    expect((schema.network as any).parse("solana")).toBe("solana");
+    const { parser } = toolNamed("get_stakes");
+    const args = { staker: "abc", validator: "v", token: "SOL" };
+    expect(parser.safeParse({ ...args, network: "tezos" }).success).toBe(false);
+    expect(parser.safeParse({ ...args, network: "solana" }).success).toBe(true);
   });
 
   it("get_daily_rewards defaults limit to 25 and sends it as a string-safe value", async () => {

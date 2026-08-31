@@ -1,0 +1,43 @@
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  // Config files sit outside the tsconfig projects, so they are not type-checked.
+  { ignores: ["dist/**", "node_modules/**", "eslint.config.js", "vitest.config.ts"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        project: ["./tsconfig.json", "./tsconfig.test.json"],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // The point of this config: keep the type system honest. `any` and type
+      // assertions are how the previous version of this code lied about shapes
+      // it had not actually checked.
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        { assertionStyle: "never" },
+      ],
+    },
+  },
+  {
+    // Tests construct deliberately partial upstream payloads and stub SDK
+    // methods by name, which needs assertions the source does not.
+    files: ["tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      // Stubs stand in for async SDK methods, so they are async without awaiting.
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+);

@@ -5,10 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20", cache: "npm" }
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npx tsc -p tsconfig.test.json
-      - run: npx vitest run
-      - run: npx tsup src/stdio.ts src/index.ts --format esm --dts --clean
+        with: { node-version: "22", cache: "pnpm" }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec tsc -p tsconfig.test.json
+      - run: pnpm exec eslint .
+      - run: pnpm exec vitest run
+      - run: pnpm exec tsup src/stdio.ts src/index.ts --format esm --dts --clean

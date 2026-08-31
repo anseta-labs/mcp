@@ -18,7 +18,7 @@ describe("createApis", () => {
     // would produce /v1/v1/... once the SDK adds its own prefix.
     const seen: string[] = [];
     const fetchImpl = (async (input: RequestInfo | URL) => {
-      seen.push(String(input));
+      seen.push(input instanceof Request ? input.url : String(input));
       return new Response(JSON.stringify({ success: true, data: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },

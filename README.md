@@ -88,17 +88,18 @@ server never puts it in a query string.
 ## Development
 
 ```bash
-npm install
-npm test            # vitest, no network access — every test injects a stub fetch
-npx tsc --noEmit
-npm run build       # tsup -> dist/
+pnpm install
+pnpm test           # vitest, no network access — every test injects a stub fetch
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm build          # tsup -> dist/
 ```
 
 Response fixtures under `tests/fixtures/` are currently derived from the upstream schemas rather
 than captured from a live host; see `tests/fixtures/FIELDS.md`. With a staging key:
 
 ```bash
-ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network/v1 npm run capture:fixtures
+ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network pnpm capture:fixtures
 ```
 
 `spec/developer_api.json` is a read-only copy of the Anseta OpenAPI spec, kept as reference for the

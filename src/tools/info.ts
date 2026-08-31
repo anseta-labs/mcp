@@ -1,13 +1,32 @@
 import { z } from "zod";
-import { Network, StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
-import { guard, trimResponse } from "./shared.js";
+import {
+  Network,
+  StakingNetwork,
+  StakingToken,
+  type Entity,
+  type NetworkConfig,
+  type StakingOption,
+  type TokenInfo,
+} from "@anseta/typescript-sdk";
+import { ensureSuccess } from "../errors.js";
+import { trimResponse } from "../output.js";
 import { defineTool } from "./types.js";
-import type { AnsetaTool, ToolContext } from "./types.js";
+import type { AnsetaTool } from "./types.js";
 
-const NETWORK_FIELDS = ["network", "type", "nativeToken", "testnet", "chainId", "explorer"] as const;
-const TOKEN_FIELDS = ["symbol", "network", "decimals", "denomination", "native", "testnet", "tokenAddress"] as const;
-const OPTION_FIELDS = ["network", "token", "status", "info"] as const;
-const ENTITY_FIELDS = ["entityId", "name", "entityType", "active", "description"] as const;
+// Field lists are keyed to the SDK's response models, so a name that drifts out
+// of the upstream schema fails the build rather than silently dropping a column.
+const NETWORK_FIELDS = [
+  "network", "type", "nativeToken", "testnet", "chainId", "explorer",
+] as const satisfies readonly (keyof NetworkConfig)[];
+const TOKEN_FIELDS = [
+  "symbol", "network", "decimals", "denomination", "testnet", "tokenAddress",
+] as const satisfies readonly (keyof TokenInfo)[];
+const OPTION_FIELDS = [
+  "network", "token", "status", "info",
+] as const satisfies readonly (keyof StakingOption)[];
+const ENTITY_FIELDS = [
+  "entityId", "name", "entityType", "active", "description",
+] as const satisfies readonly (keyof Entity)[];
 
 export const infoTools: AnsetaTool[] = [
   defineTool({
@@ -18,14 +37,13 @@ export const infoTools: AnsetaTool[] = [
       network: z.enum(Network).optional().describe("Filter to one network identifier, e.g. 'solana'."),
       testnet: z.enum(["true", "false"]).optional().describe("Filter to testnets or mainnets only."),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.info.getNetworks({
-          network: args.network,
-          testnet: args.testnet,
-        });
-        return trimResponse(data, NETWORK_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.info.getNetworks({
+        network: args.network,
+        testnet: args.testnet,
+      }));
+      return trimResponse(data, NETWORK_FIELDS);
+    },
   }),
   defineTool({
     name: "list_tokens",
@@ -37,16 +55,15 @@ export const infoTools: AnsetaTool[] = [
       testnet: z.enum(["true", "false"]).optional(),
       tokenAddress: z.string().optional().describe("Filter by token contract address."),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.info.getTokens({
-          network: args.network,
-          symbol: args.symbol,
-          testnet: args.testnet,
-          tokenAddress: args.tokenAddress,
-        });
-        return trimResponse(data, TOKEN_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.info.getTokens({
+        network: args.network,
+        symbol: args.symbol,
+        testnet: args.testnet,
+        tokenAddress: args.tokenAddress,
+      }));
+      return trimResponse(data, TOKEN_FIELDS);
+    },
   }),
   defineTool({
     name: "list_staking_options",
@@ -59,17 +76,16 @@ export const infoTools: AnsetaTool[] = [
       status: z.enum(["LIVE", "PLANNED"]).optional(),
       testnet: z.enum(["true", "false"]).optional(),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.info.getStakingOptions({
-          network: args.network,
-          token: args.token,
-          protocol: args.protocol,
-          status: args.status,
-          testnet: args.testnet,
-        });
-        return trimResponse(data, OPTION_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.info.getStakingOptions({
+        network: args.network,
+        token: args.token,
+        protocol: args.protocol,
+        status: args.status,
+        testnet: args.testnet,
+      }));
+      return trimResponse(data, OPTION_FIELDS);
+    },
   }),
   defineTool({
     name: "list_entities",
@@ -79,13 +95,12 @@ export const infoTools: AnsetaTool[] = [
       active: z.enum(["true", "false"]).optional().describe("Filter to active entities only."),
       entityType: z.string().optional(),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.info.getEntities({
-          active: args.active,
-          entityType: args.entityType,
-        });
-        return trimResponse(data, ENTITY_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.info.getEntities({
+        active: args.active,
+        entityType: args.entityType,
+      }));
+      return trimResponse(data, ENTITY_FIELDS);
+    },
   }),
 ];

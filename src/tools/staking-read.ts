@@ -1,36 +1,55 @@
 import { z } from "zod";
-import { StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
+import {
+  StakingNetwork,
+  StakingToken,
+  type DailyRewardItem,
+  type DelegationHistoryItem,
+  type RewardHistoryItem,
+  type Stake,
+  type Validator,
+} from "@anseta/typescript-sdk";
 import { MAX_LIST_ITEMS } from "../constants.js";
-import { guard, trimResponse } from "./shared.js";
+import { ensureSuccess } from "../errors.js";
+import { trimResponse } from "../output.js";
 import { defineTool } from "./types.js";
-import type { AnsetaTool, ToolContext } from "./types.js";
+import type { AnsetaTool } from "./types.js";
 
-// Field lists are derived from the upstream response shapes, not from the
-// OpenAPI spec, which types /staking/validators and /staking/stakes as bare
-// nullables. See tests/fixtures/FIELDS.md for the provenance of each list.
+// Field lists are keyed to the SDK's response models, so a name that drifts out
+// of the upstream schema fails the build rather than silently dropping a
+// column. See tests/fixtures/FIELDS.md for why each field is kept or dropped.
 const VALIDATOR_FIELDS = [
   "validatorId", "validatorAddress", "moniker", "status", "network",
   "commissionRate", "publicDelegationEnabled", "website",
-] as const;
+] as const satisfies readonly (keyof Validator)[];
 const STAKE_FIELDS = [
   "network", "token", "tokenAddress", "stakerAddress", "validatorAddress",
   "amount", "status", "unstakingCompletionDate", "rewards",
-] as const;
+] as const satisfies readonly (keyof Stake)[];
 const DELEGATION_FIELDS = [
   "validatorId", "validatorMoniker", "delegatorAddress", "eventType",
   "amountFormatted", "tokenSymbol", "timestamp", "transactionHash", "network",
-] as const;
+] as const satisfies readonly (keyof DelegationHistoryItem)[];
 const REWARD_FIELDS = [
   "validatorId", "validatorMoniker", "delegatorAddress",
   "amountFormatted", "tokenSymbol", "timestamp", "transactionHash", "network",
-] as const;
+] as const satisfies readonly (keyof RewardHistoryItem)[];
 const DAILY_FIELDS = [
   "validatorId", "validatorMoniker", "date", "totalRewardFormatted",
   "delegatorRewardFormatted", "validatorCommissionFormatted", "tokenSymbol", "network",
-] as const;
+] as const satisfies readonly (keyof DailyRewardItem)[];
 
-const limitArg = z.number().int().min(1).max(100).optional()
-  .describe(`Maximum rows to return. Defaults to ${MAX_LIST_ITEMS}.`);
+/**
+ * Kept free of `.transform`: McpServer parses arguments against this shape
+ * before calling the handler, and `defineTool` parses them again, so a schema
+ * whose output does not re-parse would reject its own valid input.
+ */
+const limitArg = z
+  .number()
+  .int()
+  .min(1)
+  .max(100)
+  .default(MAX_LIST_ITEMS)
+  .describe("Maximum rows to return.");
 
 export const stakingReadTools: AnsetaTool[] = [
   defineTool({
@@ -41,14 +60,13 @@ export const stakingReadTools: AnsetaTool[] = [
       network: z.enum(StakingNetwork).optional().describe("Network identifier from list_networks."),
       status: z.enum(["LIVE", "PLANNED"]).optional(),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.staking.getValidators({
-          network: args.network,
-          status: args.status,
-        });
-        return trimResponse(data, VALIDATOR_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.staking.getValidators({
+        network: args.network,
+        status: args.status,
+      }));
+      return trimResponse(data, VALIDATOR_FIELDS);
+    },
   }),
   defineTool({
     name: "get_stakes",
@@ -60,18 +78,16 @@ export const stakingReadTools: AnsetaTool[] = [
       validator: z.string().describe("Validator address from list_validators."),
       token: z.enum(StakingToken).describe("Token symbol."),
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        // This endpoint nests its array under `data.stakes`.
-        // The array is nested under data.stakes, unlike the other list endpoints.
-        const { data } = await ctx.staking.getStakingPositions({
-          staker: args.staker,
-          network: args.network,
-          validator: args.validator,
-          token: args.token,
-        });
-        return trimResponse(data?.stakes ?? [], STAKE_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      // This endpoint nests its array under `data.stakes`, unlike the others.
+      const { data } = ensureSuccess(await ctx.staking.getStakingPositions({
+        staker: args.staker,
+        network: args.network,
+        validator: args.validator,
+        token: args.token,
+      }));
+      return trimResponse(data?.stakes, STAKE_FIELDS);
+    },
   }),
   defineTool({
     name: "get_delegation_history",
@@ -82,15 +98,14 @@ export const stakingReadTools: AnsetaTool[] = [
       eventType: z.string().optional().describe("Filter to a single event type."),
       limit: limitArg,
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.staking.getStakingDelegationHistory({
-          validatorId: args.validatorId,
-          eventType: args.eventType,
-          limit: String(args.limit ?? MAX_LIST_ITEMS),
-        });
-        return trimResponse(data, DELEGATION_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.staking.getStakingDelegationHistory({
+        validatorId: args.validatorId,
+        eventType: args.eventType,
+        limit: String(args.limit),
+      }));
+      return trimResponse(data, DELEGATION_FIELDS);
+    },
   }),
   defineTool({
     name: "get_reward_history",
@@ -100,14 +115,13 @@ export const stakingReadTools: AnsetaTool[] = [
       validatorId: z.string().describe("Validator identifier from list_validators."),
       limit: limitArg,
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.staking.getStakingRewardHistory({
-          validatorId: args.validatorId,
-          limit: String(args.limit ?? MAX_LIST_ITEMS),
-        });
-        return trimResponse(data, REWARD_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.staking.getStakingRewardHistory({
+        validatorId: args.validatorId,
+        limit: String(args.limit),
+      }));
+      return trimResponse(data, REWARD_FIELDS);
+    },
   }),
   defineTool({
     name: "get_daily_rewards",
@@ -119,15 +133,14 @@ export const stakingReadTools: AnsetaTool[] = [
       endDate: z.string().optional().describe("Inclusive end date, YYYY-MM-DD."),
       limit: limitArg,
     },
-    handler: (args, ctx: ToolContext) =>
-      guard(async () => {
-        const { data } = await ctx.staking.getStakingDailyRewards({
-          validatorId: args.validatorId,
-          startDate: args.startDate,
-          endDate: args.endDate,
-          limit: String(args.limit ?? MAX_LIST_ITEMS),
-        });
-        return trimResponse(data, DAILY_FIELDS);
-      }),
+    handler: async (args, ctx) => {
+      const { data } = ensureSuccess(await ctx.staking.getStakingDailyRewards({
+        validatorId: args.validatorId,
+        startDate: args.startDate,
+        endDate: args.endDate,
+        limit: String(args.limit),
+      }));
+      return trimResponse(data, DAILY_FIELDS);
+    },
   }),
 ];
