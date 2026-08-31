@@ -180,3 +180,17 @@ describe("write tools", () => {
     expect(toolNamed("build_withdraw_tx").description).toContain("build_unstake_tx");
   });
 });
+
+describe("build_withdraw_tx", () => {
+  it("does not demand an amount on a network where staking requires one", async () => {
+    // Withdrawal claims whatever is available, so the amount rule must not
+    // apply to it — Solana requires an amount to stake but not to withdraw.
+    const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
+    const ctx = stubApis({ createStakingWithdrawal: post });
+    const result = await toolNamed("build_withdraw_tx").handler(
+      { network: "solana", token: "SOL", staker: "abc", validator: "vote1" }, ctx,
+    );
+    expect(result.isError).toBeUndefined();
+    expect(post).toHaveBeenCalled();
+  });
+});

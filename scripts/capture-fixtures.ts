@@ -1,7 +1,7 @@
 /**
  * Dev-only: record live API responses into tests/fixtures/.
  *
- *   ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network npm run capture:fixtures
+ *   ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network pnpm capture:fixtures
  *
  * Captured files replace the schema-derived placeholders. Redact any address
  * belonging to a real user before committing, and update tests/fixtures/FIELDS.md.
@@ -12,7 +12,7 @@ import { createApis } from "../src/client.js";
 const apiKey = process.env.ANSETA_API_KEY;
 if (!apiKey) throw new Error("Set ANSETA_API_KEY to capture fixtures");
 
-const { info, staking } = createApis({ apiKey, baseUrl: process.env.ANSETA_BASE_URL });
+const { info, staking, restaking } = createApis({ apiKey, baseUrl: process.env.ANSETA_BASE_URL });
 
 const captures: Array<[string, () => Promise<unknown>]> = [
   ["networks", async () => (await info.getNetworks({})).data],
@@ -20,6 +20,7 @@ const captures: Array<[string, () => Promise<unknown>]> = [
   ["entities", async () => (await info.getEntities({})).data],
   ["staking-options", async () => (await info.getStakingOptions({})).data],
   ["validators", async () => (await staking.getValidators({ network: "solana" })).data],
+  ["operators", async () => (await restaking.getRestakingOperators()).data],
 ];
 
 mkdirSync("tests/fixtures", { recursive: true });

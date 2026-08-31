@@ -21,16 +21,22 @@ before pushing. Tests never touch the network — every test injects stub SDK me
 
 ## Architecture
 
-An MCP server exposing the Anseta staking API as 12 tools. Layering, outermost first:
+An MCP server exposing the Anseta staking and EigenLayer restaking API as 22 tools. Layering,
+outermost first:
 
 - `src/stdio.ts` — the `anseta-mcp` binary. Reads `ANSETA_API_KEY` / `ANSETA_BASE_URL` from env.
   stdout carries the MCP protocol, so all diagnostics go to stderr.
 - `src/server.ts` — `createAnsetaServer()` registers `allTools` on an `McpServer`. Deliberately
   transport-agnostic; the stdio binary and any future HTTP host both call it.
-- `src/client.ts` — wraps `@anseta/typescript-sdk` into `AnsetaApis` (`{ info, staking }`), the
-  *only* thing tools depend on. `AnsetaApis` is `Pick<>`ed down to the methods actually used, so a
-  test can stub a single method. `fetchImpl` is injectable.
-- `src/tools/*.ts` — the tool definitions, grouped as info / staking-read / staking-write.
+- `src/client.ts` — wraps `@anseta/typescript-sdk` into `AnsetaApis`
+  (`{ info, staking, restaking }`), the *only* thing tools depend on. `AnsetaApis` is `Pick<>`ed
+  down to the methods actually used, so a test can stub a single method. `fetchImpl` is injectable,
+  which is what lets `tests/server.test.ts` drive the whole stack offline.
+- `src/tools/*.ts` — the tool definitions, grouped as info / staking-read / staking-write /
+  restaking-read / restaking-write. `args.ts` (shared zod argument builders), `fields.ts` (the three
+  history projection lists both domains return) and `review.ts` (the `REVIEW BEFORE SIGNING` block
+  every `build_*_tx` returns) are shared between those groups — put anything both families need
+  there rather than importing across sibling tool modules.
 - `src/output.ts`, `src/errors.ts` — output shaping and error translation.
 
 ### Tool definitions
@@ -74,8 +80,11 @@ Tool output is model context, so it is shaped rather than passed through:
 
 ### Domain invariants
 
-- **Never holds a key, never broadcasts.** The three `build_*_tx` tools return unsigned transactions
-  plus a `REVIEW BEFORE SIGNING` block. Do not add signing, key handling, or broadcast.
+- **Never holds a key, never broadcasts.** The eight `build_*_tx` tools return unsigned transactions
+  plus a `REVIEW BEFORE SIGNING` block, rendered by the single `buildTxResult()` in
+  `src/tools/review.ts` so the two families cannot drift apart on the wording. The promise is also
+  asserted on every write tool's *description*, since that is all the model sees when choosing.
+  Do not add signing, key handling, or broadcast.
 - **Amounts are integer strings in base denomination**, never numbers or decimals — base units exceed
   the exact-integer range of a JS number. The schema's regex rejects both, with a message telling the
   model to call `list_tokens` for `decimals`; `checkNetworkRules()` then applies the per-network
@@ -89,7 +98,18 @@ Tool output is model context, so it is shaped rather than passed through:
   on Ethereum L1. This surprises people; the tool descriptions say so on purpose.
 - `build_unstake_tx` (begins unbonding) and `build_withdraw_tx` (claims what has finished unbonding)
   are two distinct lifecycle steps, not alternatives.
-- `get_stakes` nests its array under `data.stakes`, unlike every other list endpoint.
+- `get_stakes` and `get_restaking_stakes` nest their arrays under `data.stakes`, unlike every other
+  list endpoint.
+- **Restaking is a separate surface**, EigenLayer on Ethereum only (`RestakingNetwork`,
+  `RestakingToken`). Its lifecycle is four steps and each is its own endpoint: `deposit` (moves
+  tokens into a strategy and earns nothing on its own) → `delegate` (one operator at a time) →
+  `unstake` (partial, delegation kept) *or* `undelegate` (ALL assets, delegation ended) → after
+  ~7 days on mainnet, `withdraw`. Unlike staking there are no conditional per-network argument
+  rules, so the zod schemas are the whole of the validation and there is no `NETWORK_RULES`
+  equivalent.
+- The restaking history routes take the operator id in a path parameter the spec still calls
+  `validatorId`. The tools expose it as `operatorId`, which is what `list_operators` returns, and
+  map it at the call site.
 
 ### Base URL
 

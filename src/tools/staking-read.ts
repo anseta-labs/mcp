@@ -2,15 +2,13 @@ import { z } from "zod";
 import {
   StakingNetwork,
   StakingToken,
-  type DailyRewardItem,
-  type DelegationHistoryItem,
-  type RewardHistoryItem,
   type Stake,
   type Validator,
 } from "@anseta/typescript-sdk";
-import { MAX_LIST_ITEMS } from "../constants.js";
 import { ensureSuccess } from "../errors.js";
 import { trimResponse } from "../output.js";
+import { limitArg } from "./args.js";
+import { DAILY_FIELDS, DELEGATION_FIELDS, REWARD_FIELDS } from "./fields.js";
 import { defineTool } from "./types.js";
 import type { AnsetaTool } from "./types.js";
 
@@ -25,31 +23,6 @@ const STAKE_FIELDS = [
   "network", "token", "tokenAddress", "stakerAddress", "validatorAddress",
   "amount", "status", "unstakingCompletionDate", "rewards",
 ] as const satisfies readonly (keyof Stake)[];
-const DELEGATION_FIELDS = [
-  "validatorId", "validatorMoniker", "delegatorAddress", "eventType",
-  "amountFormatted", "tokenSymbol", "timestamp", "transactionHash", "network",
-] as const satisfies readonly (keyof DelegationHistoryItem)[];
-const REWARD_FIELDS = [
-  "validatorId", "validatorMoniker", "delegatorAddress",
-  "amountFormatted", "tokenSymbol", "timestamp", "transactionHash", "network",
-] as const satisfies readonly (keyof RewardHistoryItem)[];
-const DAILY_FIELDS = [
-  "validatorId", "validatorMoniker", "date", "totalRewardFormatted",
-  "delegatorRewardFormatted", "validatorCommissionFormatted", "tokenSymbol", "network",
-] as const satisfies readonly (keyof DailyRewardItem)[];
-
-/**
- * Kept free of `.transform`: McpServer parses arguments against this shape
- * before calling the handler, and `defineTool` parses them again, so a schema
- * whose output does not re-parse would reject its own valid input.
- */
-const limitArg = z
-  .number()
-  .int()
-  .min(1)
-  .max(100)
-  .default(MAX_LIST_ITEMS)
-  .describe("Maximum rows to return.");
 
 export const stakingReadTools: AnsetaTool[] = [
   defineTool({

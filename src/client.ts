@@ -1,6 +1,7 @@
 import {
   APIInfoApi,
   Configuration,
+  EigenlayerRestakingApi,
   SimpleStakingApi,
 } from "@anseta/typescript-sdk";
 import { DEFAULT_BASE_URL } from "./constants.js";
@@ -31,6 +32,19 @@ export interface AnsetaApis {
     | "createUnstake"
     | "createStakingWithdrawal"
   >;
+  restaking: Pick<
+    EigenlayerRestakingApi,
+    | "getRestakingOperators"
+    | "getRestakingPositions"
+    | "getRestakingDelegationHistory"
+    | "getRestakingRewardHistory"
+    | "getRestakingDailyRewards"
+    | "createRestakingDeposit"
+    | "createRestakingDelegation"
+    | "createRestakingUnstake"
+    | "createRestakingUndelegation"
+    | "createRestakingWithdrawal"
+  >;
 }
 
 /**
@@ -54,5 +68,6 @@ export function createApis(options: AnsetaClientOptions): AnsetaApis {
   return {
     info: new APIInfoApi(configuration),
     staking: new SimpleStakingApi(configuration),
+    restaking: new EigenlayerRestakingApi(configuration),
   };
 }

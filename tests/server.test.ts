@@ -5,13 +5,24 @@ import { allTools } from "../src/tools/index.js";
 import { createAnsetaServer } from "../src/server.js";
 
 describe("tool registry", () => {
-  it("exposes exactly 12 tools", () => {
-    expect(allTools).toHaveLength(12);
+  it("exposes exactly 22 tools", () => {
+    expect(allTools).toHaveLength(22);
   });
 
   it("has no duplicate names", () => {
     const names = allTools.map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("promises unsigned transactions in every build_ tool's description", () => {
+    // The model chooses a tool from its description alone, so the guarantee has
+    // to hold there and not only in the result body.
+    const writeTools = allTools.filter((t) => t.name.startsWith("build_"));
+    expect(writeTools).toHaveLength(8);
+    for (const tool of writeTools) {
+      expect(tool.description, tool.name).toContain("unsigned");
+      expect(tool.description, tool.name).toContain("nothing is broadcast");
+    }
   });
 
   it("gives every tool a snake_case name and a real description", () => {
@@ -61,7 +72,7 @@ describe("a registered tool, called the way a host calls it", () => {
   it("lists every tool with a usable input schema", async () => {
     const client = await connect(stubFetch([]));
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(12);
+    expect(tools).toHaveLength(22);
     for (const tool of tools) expect(tool.inputSchema.type).toBe("object");
   });
 
@@ -86,6 +97,28 @@ describe("a registered tool, called the way a host calls it", () => {
     });
     expect(result.isError).toBeFalsy();
     expect(urls[0]).toContain("limit=5");
+  });
+
+  it("calls a tool that declares no arguments at all", async () => {
+    // list_operators has an empty schema, which is its own path through the
+    // host's argument validation.
+    const urls: string[] = [];
+    const client = await connect(stubFetch(urls, { success: true, data: [] }));
+    const result = await client.callTool({ name: "list_operators", arguments: {} });
+    expect(result.isError).toBeFalsy();
+    expect(urls[0]).toContain("/v1/restaking/operators");
+  });
+
+  it("runs a restaking tool end to end", async () => {
+    const urls: string[] = [];
+    const client = await connect(stubFetch(urls, { success: true, data: [] }));
+    const result = await client.callTool({
+      name: "get_restaking_delegation_history",
+      arguments: { operatorId: "op-1" },
+    });
+    expect(result.isError).toBeFalsy();
+    expect(urls[0]).toContain("/v1/restaking/delegation-tx-history/op-1");
+    expect(urls[0]).toContain("limit=25");
   });
 
   it("reports a 200 that carries success:false as an error", async () => {

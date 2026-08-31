@@ -9,7 +9,12 @@ type Method = (...args: never[]) => Promise<unknown>;
  * obscure what each test is about.
  */
 type Stubs = Partial<
-  Record<keyof AnsetaApis["info"] | keyof AnsetaApis["staking"], Method>
+  Record<
+    | keyof AnsetaApis["info"]
+    | keyof AnsetaApis["staking"]
+    | keyof AnsetaApis["restaking"],
+    Method
+  >
 >;
 
 /**
@@ -23,5 +28,5 @@ export function stubApis(stubs: Stubs): AnsetaApis {
       stubs[name as keyof Stubs] ??
       (() => Promise.reject(new Error(`${name} was not stubbed`))),
   });
-  return { info: group, staking: group };
+  return { info: group, staking: group, restaking: group };
 }
