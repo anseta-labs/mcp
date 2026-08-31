@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import pkg from "../package.json" with { type: "json" };
 import { AnsetaClient } from "./client.js";
 import { allTools } from "./tools/index.js";
 
@@ -10,7 +11,7 @@ export interface ServerConfig { apiKey: string; baseUrl?: string }
  */
 export function createAnsetaServer(config: ServerConfig): McpServer {
   const client = new AnsetaClient({ apiKey: config.apiKey, baseUrl: config.baseUrl });
-  const server = new McpServer({ name: "anseta", version: "0.1.0" });
+  const server = new McpServer({ name: "anseta", version: pkg.version });
 
   for (const tool of allTools) {
     server.registerTool(

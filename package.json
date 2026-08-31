@@ -7,7 +7,7 @@
     "capture:fixtures": "tsx scripts/capture-fixtures.ts",
     "build": "tsup src/stdio.ts src/index.ts --format esm --dts --clean",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run test && npm run build"
+    "prepublishOnly": "pnpm run test && pnpm run build"
   },
   "keywords": [
     "mcp",
@@ -48,5 +48,6 @@
   "types": "./dist/index.d.ts",
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "packageManager": "pnpm@10.30.3"
 }
