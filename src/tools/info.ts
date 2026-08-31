@@ -42,7 +42,9 @@ export const infoTools: AnsetaTool[] = [
         network: args.network,
         testnet: args.testnet,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, NETWORK_FIELDS);
     },
@@ -64,7 +66,9 @@ export const infoTools: AnsetaTool[] = [
         testnet: args.testnet,
         tokenAddress: args.tokenAddress,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, TOKEN_FIELDS);
     },
@@ -88,7 +92,9 @@ export const infoTools: AnsetaTool[] = [
         status: args.status,
         testnet: args.testnet,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, OPTION_FIELDS);
     },
@@ -106,7 +112,9 @@ export const infoTools: AnsetaTool[] = [
         active: args.active,
         entityType: args.entityType,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, ENTITY_FIELDS);
     },

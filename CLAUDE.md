@@ -49,7 +49,25 @@ handler by always going through `defineTool`, never by constructing an `AnsetaTo
 `defineTool` also owns the error boundary: it parses the arguments and catches everything the
 handler throws, so a bad argument, an upstream error and a transport failure all reach the model as
 readable text. Handlers therefore contain no try/catch of their own and end with
-`trimResponse(data, FIELDS)` for lists.
+`trimResponse(response.data, FIELDS)` for lists.
+
+**A handler has exactly one way to fail: it throws.** It never returns an `errorResult` itself.
+There are three kinds of throw, and `defineTool` words each one:
+
+| Thrown | Comes from | Reaches the model as |
+|---|---|---|
+| `z.ZodError` | the schema, on shape or format | `Invalid arguments for <tool>: …` |
+| `ToolArgumentError` | a rule the JSON Schema cannot express, e.g. `NETWORK_RULES` | its own message, verbatim |
+| anything else | the SDK, the network, a bug | `toAnsetaError().toModelMessage()` |
+
+That uniformity is the point: every handler body reads as a straight line of guard, call, guard,
+return, with no mixture of `return errorResult(...)` in one branch and `throw` in another. Add a new
+failure mode by throwing, and give it a case here if it needs different wording.
+
+Argument rules are *not* folded into the zod schema with `.superRefine`. They could be, but
+`McpServer` parses from the raw shape and would not run the refinement, so the schema and
+`tool.parser` would disagree about what is valid — and the prose that makes these messages useful
+("Call list_validators with network='solana' to find one") reads better outside a validation error.
 
 `McpServer` validates arguments against `inputSchema` and passes the **parsed** result to the
 handler, which `defineTool` then parses a second time. Schemas here must therefore be
@@ -75,10 +93,18 @@ Tool output is model context, so it is shaped rather than passed through:
   helps* (400 → fix args; 401 → don't retry, report; 429 → back off; status 0 → connectivity). Keep
   that property when adding cases.
 - **A 2xx can still be a failure.** The API's envelope carries `success`, and the generated client
-  does not look at it, so every handler guards its own call on the line after it:
-  `if (response.success === false) throw parseErrorBody(200, response);`. Without that a failed read
-  reads as an empty list and a failed `build_*_tx` reads as a transaction ready to sign. It is
-  repeated per call site rather than hidden in a helper that wraps the `await`.
+  does not look at it, so every handler guards its own call on the lines after it:
+
+  ```ts
+  const response = await ctx.info.getNetworks({ ... });
+  if (response.success === false) {
+    throw parseErrorBody(200, response);
+  }
+  ```
+
+  Without that guard a failed read reads as an empty list and a failed `build_*_tx` reads as a
+  transaction ready to sign. It is repeated per call site rather than hidden in a helper that wraps
+  the `await`.
 
 ### Domain invariants
 
@@ -150,3 +176,31 @@ it at runtime.
 
 - Don't condense code too much. Avoid oneliners and try to leave blank lines between code blocks if they 
 are not related
+- **Every `if` / `for` / `while` body gets braces and its own line**, including one-statement guard
+  clauses. `if (x) return y;` is a oneliner; write it as:
+
+  ```ts
+  if (x) {
+    return y;
+  }
+  ```
+
+  This is enforced, not conventional: eslint's `curly: ["error", "all"]`. Note that `--fix` only
+  inserts the braces (`if (x) {return y;}`) — it will not break the line, because that is a
+  formatter's job and there is no formatter here. Put the newline in by hand.
+
+### Where a rule belongs
+
+There is **no formatter** in this repo — no Prettier, Biome, dprint or `.editorconfig`. eslint is
+the only automated enforcement, so:
+
+- **Anything mechanically checkable goes in `eslint.config.js`**, style included. That is where
+  `curly` lives, next to the type-honesty rules (`no-explicit-any`, `consistent-type-assertions`).
+  Adding a rule there is preferred over writing it down here, because a rule only in this file is a
+  rule that gets forgotten.
+- **This file carries the rules a linter cannot express** — the judgement calls: how much to
+  condense, what a tool description must promise, which field to project. Rules that live here are
+  documented *with their reason*, so a future change knows what it would be breaking.
+- Prettier has deliberately **not** been adopted: it would reflow the projection field lists, which
+  are grouped by line on purpose, and fight the "don't condense" rule above. If that trade ever
+  changes, adopt it in its own commit so the reformat is separable from real changes.

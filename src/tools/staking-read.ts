@@ -38,7 +38,9 @@ export const stakingReadTools: AnsetaTool[] = [
         network: args.network,
         status: args.status,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, VALIDATOR_FIELDS);
     },
@@ -61,7 +63,9 @@ export const stakingReadTools: AnsetaTool[] = [
         validator: args.validator,
         token: args.token,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data?.stakes, STAKE_FIELDS);
     },
@@ -81,7 +85,9 @@ export const stakingReadTools: AnsetaTool[] = [
         eventType: args.eventType,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, DELEGATION_FIELDS);
     },
@@ -99,7 +105,9 @@ export const stakingReadTools: AnsetaTool[] = [
         validatorId: args.validatorId,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, REWARD_FIELDS);
     },
@@ -121,7 +129,9 @@ export const stakingReadTools: AnsetaTool[] = [
         endDate: args.endDate,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, DAILY_FIELDS);
     },

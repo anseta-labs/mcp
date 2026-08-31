@@ -10,7 +10,9 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { createApis } from "../src/client.js";
 
 const apiKey = process.env.ANSETA_API_KEY;
-if (!apiKey) throw new Error("Set ANSETA_API_KEY to capture fixtures");
+if (!apiKey) {
+  throw new Error("Set ANSETA_API_KEY to capture fixtures");
+}
 
 const { info, staking, restaking } = createApis({ apiKey, baseUrl: process.env.ANSETA_BASE_URL });
 

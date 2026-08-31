@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
 import { NETWORK_RULES } from "../constants.js";
-import { parseErrorBody } from "../errors.js";
-import { errorResult } from "../output.js";
+import { ToolArgumentError, parseErrorBody } from "../errors.js";
 import { amountArg, decimalsArg } from "./args.js";
 import { buildTxResult, reviewAmount } from "./review.js";
 import { defineTool } from "./types.js";
@@ -34,11 +33,12 @@ type WithdrawArgs = ToolArgs<typeof commonSchema>;
  * express. Shape and format are already guaranteed by the schema, so only the
  * per-network rules are left to check here.
  */
-function checkValidatorRule(args: StakeArgs | WithdrawArgs): string | null {
+function assertValidatorRule(args: StakeArgs | WithdrawArgs): void {
   if (NETWORK_RULES[args.network].validatorRequired && !args.validator) {
-    return `Network '${args.network}' requires a 'validator' argument. Call list_validators with network='${args.network}' to find one.`;
+    throw new ToolArgumentError(
+      `Network '${args.network}' requires a 'validator' argument. Call list_validators with network='${args.network}' to find one.`,
+    );
   }
-  return null;
 }
 
 /**
@@ -46,14 +46,14 @@ function checkValidatorRule(args: StakeArgs | WithdrawArgs): string | null {
  * `build_withdraw_tx` claims whatever is available, so it checks the validator
  * rule alone — asking it for an amount would reject every valid call.
  */
-function checkStakeRules(args: StakeArgs): string | null {
-  const validator = checkValidatorRule(args);
-  if (validator) return validator;
+function assertStakeRules(args: StakeArgs): void {
+  assertValidatorRule(args);
 
   if (NETWORK_RULES[args.network].amountRequired && args.amount === undefined) {
-    return `Network '${args.network}' requires an 'amount' argument, as a string in the token's base denomination.`;
+    throw new ToolArgumentError(
+      `Network '${args.network}' requires an 'amount' argument, as a string in the token's base denomination.`,
+    );
   }
-  return null;
 }
 
 /** The review block's fields, in the order they are shown. */
@@ -84,8 +84,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       "Build unsigned transactions that delegate tokens to a validator. Returns transaction objects for the user to review and sign in their own wallet; nothing is broadcast and no funds move as a result of this call. Amount must be an integer string in the token's base denomination - call list_tokens for the decimals. Confirm the validator with list_validators first.",
     schema: stakeSchema,
     handler: async (args, ctx) => {
-      const invalid = checkStakeRules(args);
-      if (invalid) return errorResult(invalid);
+      assertStakeRules(args);
 
       const response = await ctx.staking.createStake({
         simplifiedStakeRequest: {
@@ -97,7 +96,9 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult("STAKE", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
@@ -108,8 +109,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       "Build unsigned transactions that begin unbonding a delegation. This starts the unbonding period; it does NOT move tokens back to the wallet. After unbonding completes, use build_withdraw_tx to claim them. Amount must be an integer string in the token's base denomination. Returns unsigned transactions for the user to sign; nothing is broadcast.",
     schema: stakeSchema,
     handler: async (args, ctx) => {
-      const invalid = checkStakeRules(args);
-      if (invalid) return errorResult(invalid);
+      assertStakeRules(args);
 
       const response = await ctx.staking.createUnstake({
         simplifiedStakeRequest: {
@@ -121,7 +121,9 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult("UNSTAKE (begins unbonding)", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
@@ -132,8 +134,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       "Build unsigned transactions that claim tokens whose unbonding period has finished, or claim accrued rewards. This is the step AFTER build_unstake_tx, not a substitute for it: unstaking alone does not return tokens to the wallet. Takes no amount - it claims whatever is available. Returns unsigned transactions for the user to sign; nothing is broadcast.",
     schema: commonSchema,
     handler: async (args, ctx) => {
-      const invalid = checkValidatorRule(args);
-      if (invalid) return errorResult(invalid);
+      assertValidatorRule(args);
 
       const response = await ctx.staking.createStakingWithdrawal({
         createStakingWithdrawalRequest: {
@@ -144,7 +145,9 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "WITHDRAW (claims unbonded tokens or rewards)",

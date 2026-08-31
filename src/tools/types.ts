@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AnsetaApis } from "../client.js";
-import { toAnsetaError } from "../errors.js";
+import { ToolArgumentError, toAnsetaError } from "../errors.js";
 import { errorResult, type ToolResult } from "../output.js";
 
 export type ToolContext = AnsetaApis;
@@ -46,8 +46,10 @@ export interface AnsetaTool {
  * fail for every caller. Convert types inside the handler instead.
  *
  * The try/catch is here rather than in each handler so that every failure path
- * — upstream error, transport failure, or invalid arguments — reaches the model
- * as readable text instead of a thrown exception.
+ * — upstream error, transport failure, a bad argument, or a per-network rule —
+ * reaches the model as readable text instead of a thrown exception. Handlers
+ * therefore never return an error result themselves: they throw, and this is
+ * the one place that decides how a failure is worded.
  */
 export function defineTool<S extends z.ZodRawShape>(tool: ToolDefinition<S>): AnsetaTool {
   const parser = z.object(tool.schema);
@@ -63,6 +65,12 @@ export function defineTool<S extends z.ZodRawShape>(tool: ToolDefinition<S>): An
         if (error instanceof z.ZodError) {
           const message = `Invalid arguments for ${tool.name}:\n${z.prettifyError(error)}`;
           return errorResult(message);
+        }
+
+        // A rule the schema could not express. Already written for the model,
+        // so it is passed through as-is.
+        if (error instanceof ToolArgumentError) {
+          return errorResult(error.message);
         }
         const message = (await toAnsetaError(error)).toModelMessage();
         return errorResult(message);

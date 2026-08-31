@@ -4,7 +4,9 @@ import { stubApis } from "../support.js";
 
 function toolNamed(name: string) {
   const tool = restakingWriteTools.find((t) => t.name === name);
-  if (!tool) throw new Error(`no tool named ${name}`);
+  if (!tool) {
+    throw new Error(`no tool named ${name}`);
+  }
   return tool;
 }
 

@@ -57,7 +57,9 @@ function toBasePath(baseUrl: string): string {
 }
 
 export function createApis(options: AnsetaClientOptions): AnsetaApis {
-  if (!options.apiKey) throw new Error("ANSETA_API_KEY is required");
+  if (!options.apiKey) {
+    throw new Error("ANSETA_API_KEY is required");
+  }
 
   const configuration = new Configuration({
     basePath: toBasePath(options.baseUrl ?? DEFAULT_BASE_URL),

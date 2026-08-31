@@ -5,7 +5,9 @@ import { stubApis } from "../support.js";
 
 function toolNamed(name: string) {
   const tool = stakingReadTools.find((t) => t.name === name);
-  if (!tool) throw new Error(`missing tool ${name}`);
+  if (!tool) {
+    throw new Error(`missing tool ${name}`);
+  }
   return tool;
 }
 

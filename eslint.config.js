@@ -14,6 +14,12 @@ export default tseslint.config(
       },
     },
     rules: {
+      // There is no formatter in this repo, so the few style rules that matter
+      // are enforced here rather than left to convention. A guard clause is
+      // easier to miss when its body shares the line with the condition, so
+      // every branch gets braces and its own line.
+      curly: ["error", "all"],
+
       // The point of this config: keep the type system honest. `any` and type
       // assertions are how the previous version of this code lied about shapes
       // it had not actually checked.

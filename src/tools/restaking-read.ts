@@ -32,7 +32,9 @@ export const restakingReadTools: AnsetaTool[] = [
     schema: {},
     handler: async (_args, ctx) => {
       const response = await ctx.restaking.getRestakingOperators();
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, OPERATOR_FIELDS);
     },
@@ -55,7 +57,9 @@ export const restakingReadTools: AnsetaTool[] = [
         operator: args.operator,
         token: args.token,
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data?.stakes, RESTAKING_STAKE_FIELDS);
     },
@@ -78,7 +82,9 @@ export const restakingReadTools: AnsetaTool[] = [
         eventType: args.eventType,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, DELEGATION_FIELDS);
     },
@@ -96,7 +102,9 @@ export const restakingReadTools: AnsetaTool[] = [
         validatorId: args.operatorId,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, REWARD_FIELDS);
     },
@@ -118,7 +126,9 @@ export const restakingReadTools: AnsetaTool[] = [
         endDate: args.endDate,
         limit: String(args.limit),
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return trimResponse(response.data, DAILY_FIELDS);
     },

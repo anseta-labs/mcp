@@ -73,7 +73,9 @@ describe("a registered tool, called the way a host calls it", () => {
     const client = await connect(stubFetch([]));
     const { tools } = await client.listTools();
     expect(tools).toHaveLength(22);
-    for (const tool of tools) expect(tool.inputSchema.type).toBe("object");
+    for (const tool of tools) {
+      expect(tool.inputSchema.type).toBe("object");
+    }
   });
 
   it("applies the default limit rather than rejecting its own parsed arguments", async () => {

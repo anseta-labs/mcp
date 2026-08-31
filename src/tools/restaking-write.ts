@@ -47,7 +47,9 @@ export const restakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "RESTAKING DEPOSIT (step 1 of 2 - delegate afterwards)",
@@ -78,7 +80,9 @@ export const restakingWriteTools: AnsetaTool[] = [
           operator: args.operator,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "RESTAKING DELEGATE (step 2 of 2)",
@@ -110,7 +114,9 @@ export const restakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "RESTAKING UNSTAKE (queues a partial withdrawal, delegation kept)",
@@ -139,7 +145,9 @@ export const restakingWriteTools: AnsetaTool[] = [
           staker: args.staker,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "RESTAKING UNDELEGATE (queues ALL restaked assets and ends the delegation)",
@@ -168,7 +176,9 @@ export const restakingWriteTools: AnsetaTool[] = [
           staker: args.staker,
         },
       });
-      if (response.success === false) throw parseErrorBody(200, response);
+      if (response.success === false) {
+        throw parseErrorBody(200, response);
+      }
 
       return buildTxResult(
         "RESTAKING WITHDRAW (claims matured withdrawals)",

@@ -34,6 +34,21 @@ export class AnsetaApiError extends Error {
   }
 }
 
+/**
+ * A per-network argument rule the JSON Schema cannot express, so the model
+ * cannot be stopped by the schema alone and has to be told in prose.
+ *
+ * Thrown rather than returned so that a handler has exactly one way to fail:
+ * everything leaves through `defineTool`'s boundary, which is what keeps handler
+ * bodies a straight line of guard, call, guard, return.
+ */
+export class ToolArgumentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ToolArgumentError";
+  }
+}
+
 const ErrorEnvelope = z.object({
   error: z.object({
     code: z.string(),
@@ -69,7 +84,9 @@ export function parseErrorBody(status: number, body: unknown): AnsetaApiError {
  * the status alone still produces a useful message.
  */
 export async function toAnsetaError(error: unknown): Promise<AnsetaApiError> {
-  if (error instanceof AnsetaApiError) return error;
+  if (error instanceof AnsetaApiError) {
+    return error;
+  }
 
   if (error instanceof ResponseError) {
     const body: unknown = await error.response
@@ -94,7 +111,9 @@ function describeCause(error: unknown): string {
   const messages: string[] = [];
   let current: unknown = error;
   for (let depth = 0; current instanceof Error && depth < 4; depth++) {
-    if (current.message && !messages.includes(current.message)) messages.push(current.message);
+    if (current.message && !messages.includes(current.message)) {
+      messages.push(current.message);
+    }
     current = current.cause;
   }
   return messages.length > 0 ? messages.join(": ") : String(error);

@@ -33,7 +33,9 @@ export function sanitize(value: unknown): unknown {
       ? cleaned.slice(0, MAX_FIELD_CHARS) + "..."
       : cleaned;
   }
-  if (Array.isArray(value)) return Array.from<unknown>(value).map(sanitize);
+  if (Array.isArray(value)) {
+    return Array.from<unknown>(value).map(sanitize);
+  }
   if (value && typeof value === "object") {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sanitize(v)]));
   }
@@ -55,7 +57,9 @@ export function project<T extends object, K extends keyof T>(
     const out: Partial<Pick<T, K>> = {};
     for (const field of fields) {
       const value = row[field];
-      if (value !== undefined) out[field] = sanitize(value);
+      if (value !== undefined) {
+        out[field] = sanitize(value);
+      }
     }
     return out;
   });

@@ -6,7 +6,9 @@ import { stubApis } from "../support.js";
 
 function toolNamed(name: string) {
   const tool = infoTools.find((t) => t.name === name);
-  if (!tool) throw new Error(`missing tool ${name}`);
+  if (!tool) {
+    throw new Error(`missing tool ${name}`);
+  }
   return tool;
 }
 
@@ -18,7 +20,9 @@ describe("info tools", () => {
   });
 
   it("keeps every description under 1024 characters", () => {
-    for (const tool of infoTools) expect(tool.description.length).toBeLessThan(1024);
+    for (const tool of infoTools) {
+      expect(tool.description.length).toBeLessThan(1024);
+    }
   });
 
   it("list_tokens tells the model that decimals convert to base units", () => {

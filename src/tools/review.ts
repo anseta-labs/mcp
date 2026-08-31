@@ -12,7 +12,9 @@ const UNSIGNED_NOTICE =
 
 /** Decodes a base-unit amount for human review. Never used to build the request body. */
 export function humanAmount(amount: string, decimals: number | undefined, token: string): string {
-  if (decimals === undefined) return "unknown (decimals not provided)";
+  if (decimals === undefined) {
+    return "unknown (decimals not provided)";
+  }
 
   const padded = amount.padStart(decimals + 1, "0");
   const whole = padded.slice(0, padded.length - decimals);
