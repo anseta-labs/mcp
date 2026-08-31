@@ -11,7 +11,7 @@ export interface ServerConfig {
 }
 
 /**
- * Builds the MCP server with all 12 tools registered. Transport-agnostic on
+ * Builds the MCP server with all 22 tools registered. Transport-agnostic on
  * purpose: the stdio binary and any future hosted HTTP service both call this.
  */
 export function createAnsetaServer(config: ServerConfig): McpServer {
