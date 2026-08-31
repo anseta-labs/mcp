@@ -25,7 +25,7 @@ describe("sanitize", () => {
 });
 
 describe("project", () => {
-  it("keeps only the listed fields", () => {
+  it("keeps only the trimResponse fields", () => {
     const rows = [{ validatorId: "1", moniker: "Alice", ownerAddress: "0xabc", details: "long" }];
     expect(project(rows, ["validatorId", "moniker"])).toEqual([{ validatorId: "1", moniker: "Alice" }]);
   });

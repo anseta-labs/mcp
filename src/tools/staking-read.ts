@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
 import { MAX_LIST_ITEMS } from "../constants.js";
-import { guard, listed } from "./shared.js";
+import { guard, trimResponse } from "./shared.js";
 import { defineTool } from "./types.js";
 import type { AnsetaTool, ToolContext } from "./types.js";
 
@@ -47,7 +47,7 @@ export const stakingReadTools: AnsetaTool[] = [
           network: args.network,
           status: args.status,
         });
-        return listed(data, VALIDATOR_FIELDS);
+        return trimResponse(data, VALIDATOR_FIELDS);
       }),
   }),
   defineTool({
@@ -70,7 +70,7 @@ export const stakingReadTools: AnsetaTool[] = [
           validator: args.validator,
           token: args.token,
         });
-        return listed(data?.stakes ?? [], STAKE_FIELDS);
+        return trimResponse(data?.stakes ?? [], STAKE_FIELDS);
       }),
   }),
   defineTool({
@@ -89,7 +89,7 @@ export const stakingReadTools: AnsetaTool[] = [
           eventType: args.eventType,
           limit: String(args.limit ?? MAX_LIST_ITEMS),
         });
-        return listed(data, DELEGATION_FIELDS);
+        return trimResponse(data, DELEGATION_FIELDS);
       }),
   }),
   defineTool({
@@ -106,7 +106,7 @@ export const stakingReadTools: AnsetaTool[] = [
           validatorId: args.validatorId,
           limit: String(args.limit ?? MAX_LIST_ITEMS),
         });
-        return listed(data, REWARD_FIELDS);
+        return trimResponse(data, REWARD_FIELDS);
       }),
   }),
   defineTool({
@@ -127,7 +127,7 @@ export const stakingReadTools: AnsetaTool[] = [
           endDate: args.endDate,
           limit: String(args.limit ?? MAX_LIST_ITEMS),
         });
-        return listed(data, DAILY_FIELDS);
+        return trimResponse(data, DAILY_FIELDS);
       }),
   }),
 ];

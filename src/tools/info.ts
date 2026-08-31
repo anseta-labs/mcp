@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Network, StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
-import { guard, listed } from "./shared.js";
+import { guard, trimResponse } from "./shared.js";
 import { defineTool } from "./types.js";
 import type { AnsetaTool, ToolContext } from "./types.js";
 
@@ -24,7 +24,7 @@ export const infoTools: AnsetaTool[] = [
           network: args.network,
           testnet: args.testnet,
         });
-        return listed(data, NETWORK_FIELDS);
+        return trimResponse(data, NETWORK_FIELDS);
       }),
   }),
   defineTool({
@@ -45,7 +45,7 @@ export const infoTools: AnsetaTool[] = [
           testnet: args.testnet,
           tokenAddress: args.tokenAddress,
         });
-        return listed(data, TOKEN_FIELDS);
+        return trimResponse(data, TOKEN_FIELDS);
       }),
   }),
   defineTool({
@@ -68,7 +68,7 @@ export const infoTools: AnsetaTool[] = [
           status: args.status,
           testnet: args.testnet,
         });
-        return listed(data, OPTION_FIELDS);
+        return trimResponse(data, OPTION_FIELDS);
       }),
   }),
   defineTool({
@@ -85,7 +85,7 @@ export const infoTools: AnsetaTool[] = [
           active: args.active,
           entityType: args.entityType,
         });
-        return listed(data, ENTITY_FIELDS);
+        return trimResponse(data, ENTITY_FIELDS);
       }),
   }),
 ];
