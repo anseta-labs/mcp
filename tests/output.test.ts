@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitize, project, trimResponse, toolResult, errorResult } from "../src/output.js";
+import { sanitize, project, formatResponse, toolResult, errorResult } from "../src/output.js";
 
 describe("sanitize", () => {
   it("strips control characters but preserves ordinary whitespace", () => {
@@ -25,7 +25,7 @@ describe("sanitize", () => {
 });
 
 describe("project", () => {
-  it("keeps only the trimResponse fields", () => {
+  it("keeps only the requested fields", () => {
     const rows = [{ validatorId: "1", moniker: "Alice", ownerAddress: "0xabc", details: "long" }];
     expect(project(rows, ["validatorId", "moniker"])).toEqual([{ validatorId: "1", moniker: "Alice" }]);
   });
@@ -41,21 +41,15 @@ describe("project", () => {
   });
 });
 
-describe("trimResponse", () => {
-  it("caps long lists and reports the true total", () => {
+describe("formatResponse", () => {
+  it("returns every row in a long list", () => {
     const rows = Array.from({ length: 40 }, (_, i) => ({ validatorId: String(i) }));
-    const text = trimResponse(rows, ["validatorId"]).content[0]!.text;
-    expect(JSON.parse(text.slice(0, text.indexOf("\n\nShowing")))).toHaveLength(25);
-    expect(text).toContain("Showing 25 of 40 results");
-  });
-
-  it("does not add a truncation note to a short list", () => {
-    const text = trimResponse([{ validatorId: "1" }], ["validatorId"]).content[0]!.text;
-    expect(text).not.toContain("Showing");
+    const text = formatResponse(rows, ["validatorId"]).content[0]!.text;
+    expect(JSON.parse(text)).toHaveLength(40);
   });
 
   it("treats a missing list as empty rather than throwing", () => {
-    const result = trimResponse<{ validatorId: string }, "validatorId">(undefined, ["validatorId"]);
+    const result = formatResponse<{ validatorId: string }, "validatorId">(undefined, ["validatorId"]);
     expect(result.content[0]!.text).toBe("[]");
   });
 });

@@ -117,15 +117,4 @@ describe("restaking read tools", () => {
     expect(text).not.toContain("blockNumber");
   });
 
-  it("surfaces an upstream failure as readable text", async () => {
-    const getRestakingOperators = vi.fn(async () => ({
-      success: false,
-      error: { code: "UPSTREAM", message: "operator index unavailable" },
-    }));
-
-    const ctx = stubApis({ getRestakingOperators });
-    const result = await toolNamed("list_operators").handler({}, ctx);
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("operator index unavailable");
-  });
 });

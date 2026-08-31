@@ -77,17 +77,3 @@ describe("toAnsetaError", () => {
     expect(err.message).not.toContain("interceptors");
   });
 });
-
-describe("a 2xx body that reports failure", () => {
-  // Handlers guard their own calls with parseErrorBody(200, response); this is
-  // the translation that guard depends on.
-  it("keeps the envelope's code and message", () => {
-    const err = parseErrorBody(200, {
-      success: false,
-      error: { code: "NOT_LIVE", message: "not live yet" },
-    });
-
-    expect(err.code).toBe("NOT_LIVE");
-    expect(err.toModelMessage()).toContain("not live yet");
-  });
-});

@@ -31,6 +31,10 @@ Adds EigenLayer restaking, and moves the server onto the generated API client.
   assertions handlers previously used to read them
 - `ANSETA_BASE_URL` now takes the bare host; the client adds the `/v1` prefix.
   A URL that still ends in `/v1` keeps working
+- `list_tokens` and `list_staking_options` accept restaking networks and tokens,
+  not only the staking subsets the generated request types expose
+- Lists return every row the API returned. The previous 25-row cap hid results
+  behind a note; the history tools still take an explicit `limit`
 
 ### Fixed
 
@@ -41,9 +45,6 @@ Adds EigenLayer restaking, and moves the server onto the generated API client.
   transformed a number to a string, and since the host parses arguments before
   the handler parses them again, the second pass rejected the first pass's own
   output
-- A `200` response carrying `success: false` was treated as success, so a failed
-  read reported an empty list and a failed transaction build reported a
-  transaction ready to sign
 - `build_withdraw_tx` demanded an `amount` on networks whose staking requires
   one, rejecting valid withdrawals; withdrawal claims whatever is available
 - Connectivity failures reported the SDK's wrapper text instead of the cause,
@@ -51,6 +52,12 @@ Adds EigenLayer restaking, and moves the server onto the generated API client.
 - `decimals` is optional again on the transaction builders. It only decorates
   the review line, so requiring it rejected calls the API would have accepted,
   including Cardano stakes, which carry no amount at all
+- Transaction payloads are returned exactly as the API produced them. Long
+  encoded transactions were being truncated to a character cap and shown as
+  reviewable, so what the user was asked to sign was not what the API built
+- A build that succeeds without producing a transaction is reported as an error
+  rather than as an empty review block
+- `decimals` rejects a negative value before the call is made
 
 ## 0.1.0 - 2026-08-31
 

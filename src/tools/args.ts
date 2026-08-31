@@ -40,6 +40,7 @@ export const amountArg = z
 export const decimalsArg = z
   .number()
   .int()
+  .min(0)
   .optional()
   .describe(
     "Token decimals from list_tokens. Supplied so the result can show a human-readable amount; it is not sent to the API.",

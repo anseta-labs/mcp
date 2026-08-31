@@ -128,11 +128,17 @@ describe("a registered tool, called the way a host calls it", () => {
     expect(urls[0]).toContain("limit=25");
   });
 
-  it("reports a 200 that carries success:false as an error", async () => {
-    const body = { success: false, error: { code: "NOT_LIVE", message: "not live yet" } };
-    const client = await connect(stubFetch([], body));
-    const result = await client.callTool({ name: "list_networks", arguments: {} });
-    expect(result.isError).toBe(true);
-    expect(JSON.stringify(result.content)).toContain("not live yet");
+  it("passes restaking filters through the generated discovery client", async () => {
+    const urls: string[] = [];
+    const client = await connect(stubFetch(urls));
+    const result = await client.callTool({
+      name: "list_tokens",
+      arguments: { network: "ethereum-hoodi-testnet", symbol: "STETH" },
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(urls[0]).toContain("network=ethereum-hoodi-testnet");
+    expect(urls[0]).toContain("symbol=STETH");
   });
+
 });

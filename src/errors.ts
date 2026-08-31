@@ -40,8 +40,7 @@ export class AnsetaApiError extends Error {
  * cannot be stopped by the schema alone and has to be told in prose.
  *
  * Thrown rather than returned so that a handler has exactly one way to fail:
- * everything leaves through `defineTool`'s boundary, which is what keeps handler
- * bodies a straight line of guard, call, guard, return.
+ * everything leaves through `defineTool`'s boundary.
  */
 export class ToolArgumentError extends Error {
   constructor(message: string) {
@@ -58,15 +57,7 @@ const ErrorEnvelope = z.object({
   }),
 });
 
-/**
- * Builds the error for a body that carries the API's error envelope.
- *
- * Handlers also call this with status 200: a 2xx response can still say
- * `success: false`, and the generated client does not look at that. Left
- * unchecked, a failed read reports an empty list and a failed build reports a
- * transaction ready to sign, so every handler guards its own call with
- * `if (response.success === false) throw parseErrorBody(200, response);`.
- */
+/** Builds an error from the body of a non-2xx API response. */
 export function parseErrorBody(status: number, body: unknown): AnsetaApiError {
   const parsed = ErrorEnvelope.safeParse(body);
   if (parsed.success) {

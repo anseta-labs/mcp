@@ -1,4 +1,6 @@
-import { sanitize, toolResult } from "../output.js";
+import type { MultiTransactionResponse } from "@anseta/typescript-sdk";
+import { AnsetaApiError } from "../errors.js";
+import { toolResult } from "../output.js";
 import type { ToolResult } from "../output.js";
 
 /**
@@ -38,8 +40,21 @@ export function reviewAmount(amount: string, decimals: number | undefined, token
 export function buildTxResult(
   action: string,
   fields: Record<string, string | undefined>,
-  payload: unknown,
+  payload: MultiTransactionResponse | undefined,
 ): ToolResult {
+  if (
+    payload === undefined
+    || !Array.isArray(payload.transactions)
+    || payload.transactions.length === 0
+  ) {
+    throw new AnsetaApiError(
+      200,
+      "INVALID_RESPONSE",
+      "The Anseta API reported success but did not return any transactions.",
+      payload,
+    );
+  }
+
   const width = Math.max(...Object.keys(fields).map((label) => label.length)) + 2;
 
   const lines = Object.entries(fields)
@@ -53,5 +68,5 @@ export function buildTxResult(
     UNSIGNED_NOTICE,
   ].join("\n");
 
-  return toolResult(sanitize(payload ?? {}), review);
+  return toolResult(payload, review);
 }

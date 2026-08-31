@@ -51,7 +51,7 @@ configs.
 | `list_tokens` | Stakeable tokens with **decimals** — needed to build any amount |
 | `list_staking_options` | Which network/token pairs are LIVE or PLANNED |
 | `list_entities` | Validator organizations behind one or more validators |
-| `list_validators` | Validators available for delegation, with commission and status |
+| `list_validators` | Validators associated with your organization, with commission and status |
 | `get_stakes` | A wallet's positions with one specific validator |
 | `get_delegation_history` | Delegation and undelegation events for a validator |
 | `get_reward_history` | On-chain reward-claim transactions for a validator |
@@ -59,6 +59,11 @@ configs.
 | `build_stake_tx` | Unsigned transactions that delegate to a validator |
 | `build_unstake_tx` | Unsigned transactions that **begin** unbonding |
 | `build_withdraw_tx` | Unsigned transactions that **claim** finished unbonding or rewards |
+
+A validator appearing in `list_validators` is one associated with your organization. That is not a
+statement that you can stake to it: whether staking is available depends on the individual validator
+and its network, and the `build_*_tx` tools accept only the networks and tokens their own schemas
+list. The same holds for `list_operators` — check `publicDelegationEnabled` on the row.
 
 `build_unstake_tx` and `build_withdraw_tx` are two distinct lifecycle steps. Unstaking starts the
 unbonding period; it does not return tokens to the wallet. Withdrawing claims what has finished
@@ -72,7 +77,7 @@ and `RETH`.
 
 | Tool | What it does |
 |---|---|
-| `list_operators` | EigenLayer operators, with protocol, status and commission |
+| `list_operators` | EigenLayer operators known to Anseta, with protocol, status and commission |
 | `get_restaking_stakes` | A wallet's restaked positions with one operator, and withdrawal status |
 | `get_restaking_delegation_history` | Delegate and undelegate events for an operator |
 | `get_restaking_reward_history` | On-chain reward-claim transactions for an operator |

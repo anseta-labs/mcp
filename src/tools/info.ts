@@ -1,17 +1,33 @@
 import { z } from "zod";
 import {
   Network,
+  RestakingNetwork,
+  RestakingToken,
   StakingNetwork,
+  StakingNetworkFromJSON,
   StakingToken,
+  StakingTokenFromJSON,
   type Entity,
   type NetworkConfig,
   type StakingOption,
   type TokenInfo,
 } from "@anseta/typescript-sdk";
-import { parseErrorBody } from "../errors.js";
-import { trimResponse } from "../output.js";
+import { formatResponse } from "../output.js";
 import { defineTool } from "./types.js";
 import type { AnsetaTool } from "./types.js";
+
+// The generated discovery request types currently expose only the staking
+// subsets even though these endpoints also return and filter EigenLayer
+// networks and tokens.
+const discoveryNetworkArg = z.union([
+  z.enum(StakingNetwork),
+  z.enum(RestakingNetwork),
+]);
+
+const discoveryTokenArg = z.union([
+  z.enum(StakingToken),
+  z.enum(RestakingToken),
+]);
 
 // Field lists are keyed to the SDK's response models, so a name that drifts out
 // of the upstream schema fails the build rather than silently dropping a column.
@@ -46,36 +62,30 @@ export const infoTools: AnsetaTool[] = [
         testnet: args.testnet,
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
-      return trimResponse(response.data, NETWORK_FIELDS);
+      return formatResponse(response.data, NETWORK_FIELDS);
     },
   }),
   defineTool({
     name: "list_tokens",
     description:
-      "List stakeable tokens with their symbol, network, and decimals. The 'decimals' value is essential: every amount passed to build_stake_tx, build_unstake_tx, or build_withdraw_tx must be a string in the token's base denomination, so 1 SOL with 9 decimals is '1000000000'. Call this before building any transaction unless the decimals for that token are already known.",
+      "List stakeable and restakeable tokens with their symbol, network, and decimals. The 'decimals' value is essential: every amount passed to a transaction builder must be a string in the token's base denomination, so 1 SOL with 9 decimals is '1000000000'. Call this before building any transaction unless the decimals for that token are already known.",
     schema: {
-      network: z.enum(StakingNetwork).optional().describe("Filter by network identifier."),
-      symbol: z.enum(StakingToken).optional().describe("Filter by token symbol, e.g. 'SOL'."),
+      network: discoveryNetworkArg.optional().describe("Filter by staking or restaking network identifier."),
+      symbol: discoveryTokenArg.optional().describe("Filter by token symbol, e.g. 'SOL' or 'STETH'."),
       testnet: z.enum(["true", "false"]).optional(),
       tokenAddress: z.string().optional().describe("Filter by token contract address."),
     },
     handler: async (args, ctx) => {
       const response = await ctx.info.getTokens({
-        network: args.network,
-        symbol: args.symbol,
+        // The SDK request types lag the API's restaking filters; serialization
+        // is string-based and accepts these values at runtime.
+        network: args.network === undefined ? undefined : StakingNetworkFromJSON(args.network),
+        symbol: args.symbol === undefined ? undefined : StakingTokenFromJSON(args.symbol),
         testnet: args.testnet,
         tokenAddress: args.tokenAddress,
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
-      return trimResponse(response.data, TOKEN_FIELDS);
+      return formatResponse(response.data, TOKEN_FIELDS);
     },
   }),
   defineTool({
@@ -83,26 +93,22 @@ export const infoTools: AnsetaTool[] = [
     description:
       "List available network and token staking combinations and whether each is LIVE or PLANNED. Use this to check that a requested staking pair is actually supported before gathering addresses or building a transaction. Protocol filter accepts 'native', 'eigenlayer', or 'morpho'.",
     schema: {
-      network: z.enum(StakingNetwork).optional(),
-      token: z.enum(StakingToken).optional(),
+      network: discoveryNetworkArg.optional(),
+      token: discoveryTokenArg.optional(),
       protocol: z.enum(["native", "eigenlayer", "morpho"]).optional(),
       status: z.enum(["LIVE", "PLANNED"]).optional(),
       testnet: z.enum(["true", "false"]).optional(),
     },
     handler: async (args, ctx) => {
       const response = await ctx.info.getStakingOptions({
-        network: args.network,
-        token: args.token,
+        network: args.network === undefined ? undefined : StakingNetworkFromJSON(args.network),
+        token: args.token === undefined ? undefined : StakingTokenFromJSON(args.token),
         protocol: args.protocol,
         status: args.status,
         testnet: args.testnet,
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
-      return trimResponse(response.data, OPTION_FIELDS);
+      return formatResponse(response.data, OPTION_FIELDS);
     },
   }),
   defineTool({
@@ -119,11 +125,7 @@ export const infoTools: AnsetaTool[] = [
         entityType: args.entityType,
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
-      return trimResponse(response.data, ENTITY_FIELDS);
+      return formatResponse(response.data, ENTITY_FIELDS);
     },
   }),
 ];

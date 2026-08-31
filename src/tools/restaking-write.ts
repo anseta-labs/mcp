@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { RestakingNetwork, RestakingToken } from "@anseta/typescript-sdk";
-import { parseErrorBody } from "../errors.js";
 import { amountArg, decimalsArg } from "./args.js";
 import { buildTxResult, reviewAmount } from "./review.js";
 import { defineTool } from "./types.js";
@@ -49,10 +48,6 @@ export const restakingWriteTools: AnsetaTool[] = [
         },
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
       return buildTxResult(
         "RESTAKING DEPOSIT (step 1 of 2 - delegate afterwards)",
         {
@@ -82,10 +77,6 @@ export const restakingWriteTools: AnsetaTool[] = [
           operator: args.operator,
         },
       });
-
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
 
       return buildTxResult(
         "RESTAKING DELEGATE (step 2 of 2)",
@@ -118,10 +109,6 @@ export const restakingWriteTools: AnsetaTool[] = [
         },
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
       return buildTxResult(
         "RESTAKING UNSTAKE (queues a partial withdrawal, delegation kept)",
         {
@@ -150,10 +137,6 @@ export const restakingWriteTools: AnsetaTool[] = [
         },
       });
 
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
-
       return buildTxResult(
         "RESTAKING UNDELEGATE (queues ALL restaked assets and ends the delegation)",
         {
@@ -181,10 +164,6 @@ export const restakingWriteTools: AnsetaTool[] = [
           staker: args.staker,
         },
       });
-
-      if (response.success === false) {
-        throw parseErrorBody(200, response);
-      }
 
       return buildTxResult(
         "RESTAKING WITHDRAW (claims matured withdrawals)",

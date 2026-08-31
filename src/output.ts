@@ -1,4 +1,4 @@
-import { MAX_LIST_ITEMS, MAX_FIELD_CHARS } from "./constants.js";
+import { MAX_FIELD_CHARS } from "./constants.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 /**
@@ -80,16 +80,9 @@ export function errorResult(message: string): ToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
-export function trimResponse<T extends object, K extends keyof T>(
+export function formatResponse<T extends object, K extends keyof T>(
   rows: readonly T[] | undefined,
   fields: readonly K[],
 ): ToolResult {
-  const all = rows ?? [];
-  const capped = all.slice(0, MAX_LIST_ITEMS);
-  const note =
-    all.length > capped.length
-      ? `Showing ${capped.length} of ${all.length} results. Narrow the filters to see others.`
-      : undefined;
-
-  return toolResult(project(capped, fields), note);
+  return toolResult(project(rows ?? [], fields));
 }

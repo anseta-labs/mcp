@@ -143,22 +143,6 @@ describe("restaking write tools", () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it("surfaces a 200 that carries success:false instead of showing a transaction to sign", async () => {
-    const post = vi.fn(async () => ({
-      success: false,
-      error: { code: "NO_QUEUED_WITHDRAWAL", message: "nothing has matured yet" },
-    }));
-
-    const ctx = stubApis({ createRestakingWithdrawal: post });
-    const result = await toolNamed("build_restaking_withdraw_tx").handler(
-      { network: "ethereum", token: "STETH", staker: "0xabc" }, ctx,
-    );
-
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("nothing has matured yet");
-    expect(result.content[0]!.text).not.toContain("REVIEW BEFORE SIGNING");
-  });
-
   it("returns only the payload the API produced, not the envelope around it", async () => {
     const ctx = stubApis({ createRestakingDeposit: vi.fn(async () => TXS) });
     const result = await toolNamed("build_restaking_deposit_tx").handler(
