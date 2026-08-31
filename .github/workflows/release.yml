@@ -1,0 +1,101 @@
+name: Release
+
+# Publishes to npm when a version tag is pushed. Authentication is npm Trusted
+# Publishing: the job proves its identity with a short-lived OIDC token rather
+# than a stored secret, so there is no NPM_TOKEN to rotate or leak.
+#
+#   # describe the release in CHANGELOG.md, renaming Unreleased to the version
+#   npm pkg set version=0.2.0
+#   git commit -am "chore: release 0.2.0" && git push
+#   git tag v0.2.0 && git push origin v0.2.0    <- this is what triggers it
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # mint the OIDC token npm verifies
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Trusted publishing needs Node 22.14 or later.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          # Without registry-url the .npmrc is never written and auth fails.
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # The tag names the release; package.json decides what actually ships.
+      # When they disagree, npm rejects the publish as a duplicate version,
+      # which is a confusing way to find out. Fail here with a clear message.
+      - name: Tag must match package version
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v$TAG does not match package.json version $PKG"
+            exit 1
+          fi
+          echo "version=$PKG" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse to republish an existing version
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          if npm view "@anseta/mcp@$V" version >/dev/null 2>&1; then
+            echo "::error::@anseta/mcp@$V is already published"
+            exit 1
+          fi
+
+      - name: CHANGELOG must describe this version
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          if ! awk -v v="$V" '$0 ~ "^## " v " " {f=1;next} f && /^## /{exit} f' CHANGELOG.md | grep -q '[^[:space:]]'; then
+            echo "::error::CHANGELOG has no entry for $V"
+            exit 1
+          fi
+
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec tsc -p tsconfig.test.json
+      - run: pnpm exec eslint .
+      - run: pnpm exec vitest run
+      - run: pnpm run build
+
+      # Install and build with pnpm, but publish with npm: trusted publishing is
+      # implemented in the npm CLI only, and needs 11.5.1 or later. pnpm publish
+      # does not perform the OIDC exchange and fails with a 404.
+      - name: Publish
+        run: |
+          npm install -g npm@latest
+          npm --version
+          npm publish --access public
+
+      - name: Extract this version's changelog section
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          awk -v v="$V" '
+            $0 ~ "^## " v " " { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > /tmp/notes.md
+          if [ ! -s /tmp/notes.md ]; then
+            echo "No CHANGELOG entry found for $V." > /tmp/notes.md
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/notes.md

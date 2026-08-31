@@ -1,69 +1,62 @@
-import { describe, it, expect, vi } from "vitest";
-import { AnsetaClient } from "../src/client.js";
-import { AnsetaApiError } from "../src/errors.js";
+import { describe, it, expect } from "vitest";
+import { createApis } from "../src/client.js";
+import { DEFAULT_BASE_URL } from "../src/constants.js";
 
-function stubFetch(status: number, body: unknown) {
-  return vi.fn(async () =>
-    new Response(typeof body === "string" ? body : JSON.stringify(body), {
-      status,
-      headers: { "content-type": "application/json" },
-    }),
-  );
-}
-
-describe("AnsetaClient", () => {
-  it("sends the API key in the x-api-key header, never the query string", async () => {
-    const fetchImpl = stubFetch(200, { success: true, data: [] });
-    const client = new AnsetaClient({ apiKey: "secret-key", fetchImpl: fetchImpl as unknown as typeof fetch });
-    await client.get("/info/networks");
-
-    const [url, init] = fetchImpl.mock.calls[0]!;
-    expect(String(url)).not.toContain("secret-key");
-    expect((init as RequestInit).headers).toMatchObject({ "x-api-key": "secret-key" });
+describe("createApis", () => {
+  it("rejects a missing API key", () => {
+    expect(() => createApis({ apiKey: "" })).toThrow(/ANSETA_API_KEY/);
   });
 
-  it("omits undefined query params and stringifies numbers", async () => {
-    const fetchImpl = stubFetch(200, { success: true, data: [] });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    await client.get("/staking/daily-reward-history/v1", { limit: 25, startDate: undefined });
-
-    const url = String(fetchImpl.mock.calls[0]![0]);
-    expect(url).toContain("limit=25");
-    expect(url).not.toContain("startDate");
+  it("builds both API clients", () => {
+    const apis = createApis({ apiKey: "k" });
+    expect(typeof apis.info.getNetworks).toBe("function");
+    expect(typeof apis.staking.getValidators).toBe("function");
   });
 
-  it("throws AnsetaApiError on a non-2xx response", async () => {
-    const fetchImpl = stubFetch(400, { success: false, error: { code: "BAD", message: "nope" } });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    await expect(client.get("/info/networks")).rejects.toBeInstanceOf(AnsetaApiError);
-  });
+  it("drops a /v1 suffix, which the SDK adds itself", async () => {
+    // Earlier versions of this server took a base URL ending in /v1. Keeping it
+    // would produce /v1/v1/... once the SDK adds its own prefix.
+    const seen: string[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      seen.push(input instanceof Request ? input.url : String(input));
 
-  it("unwraps the success envelope and returns data", async () => {
-    const fetchImpl = stubFetch(200, { success: true, data: [{ network: "solana" }] });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    const result = await client.get<Array<{ network: string }>>("/info/networks");
-    expect(result).toEqual([{ network: "solana" }]);
-  });
+      return new Response(JSON.stringify({ success: true, data: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as typeof fetch;
 
-  it("posts JSON bodies", async () => {
-    const fetchImpl = stubFetch(200, { success: true, data: { transactions: [] } });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    await client.post("/staking/stake", { network: "solana" });
-
-    const init = fetchImpl.mock.calls[0]![1] as RequestInit;
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toEqual({ network: "solana" });
-  });
-});
-
-describe("AnsetaClient transport failures", () => {
-  it("translates a thrown fetch into an AnsetaApiError with status 0", async () => {
-    const fetchImpl = vi.fn(async () => { throw new TypeError("fetch failed"); });
-    const client = new AnsetaClient({ apiKey: "k", fetchImpl: fetchImpl as unknown as typeof fetch });
-    await expect(client.get("/info/networks")).rejects.toMatchObject({
-      name: "AnsetaApiError",
-      status: 0,
-      code: "NETWORK_ERROR",
+    const apis = createApis({
+      apiKey: "k",
+      baseUrl: "https://example.invalid/v1",
+      fetchImpl,
     });
+
+    await apis.info.getNetworks({});
+
+    expect(seen[0]).toContain("https://example.invalid/v1/info/networks");
+    expect(seen[0]).not.toContain("/v1/v1/");
+  });
+
+  it("sends the API key as the x-api-key header", async () => {
+    const seen: RequestInit[] = [];
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      seen.push(init ?? {});
+
+      return new Response(JSON.stringify({ success: true, data: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as typeof fetch;
+
+    const apis = createApis({ apiKey: "secret-key", fetchImpl });
+    await apis.info.getNetworks({});
+
+    expect(JSON.stringify(seen[0]?.headers)).toContain("secret-key");
+  });
+
+  it("defaults to the preview host without a /v1 suffix", () => {
+    expect(DEFAULT_BASE_URL).toBe("https://preview.api.stakefi.network");
+    expect(DEFAULT_BASE_URL.endsWith("/v1")).toBe(false);
   });
 });

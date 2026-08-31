@@ -1,5 +1,10 @@
+import {
+  APIInfoApi,
+  Configuration,
+  EigenlayerRestakingApi,
+  SimpleStakingApi,
+} from "@anseta/typescript-sdk";
 import { DEFAULT_BASE_URL } from "./constants.js";
-import { AnsetaApiError, parseErrorBody } from "./errors.js";
 
 export interface AnsetaClientOptions {
   apiKey: string;
@@ -7,72 +12,64 @@ export interface AnsetaClientOptions {
   fetchImpl?: typeof fetch;
 }
 
-export type QueryValue = string | number | boolean | undefined;
+/**
+ * The generated clients the tools use. Tools depend on this rather than on the
+ * concrete API classes so a test can supply only the methods it needs.
+ */
+export interface AnsetaApis {
+  info: Pick<
+    APIInfoApi,
+    "getNetworks" | "getTokens" | "getStakingOptions" | "getEntities"
+  >;
+  staking: Pick<
+    SimpleStakingApi,
+    | "getValidators"
+    | "getStakingPositions"
+    | "getStakingDelegationHistory"
+    | "getStakingRewardHistory"
+    | "getStakingDailyRewards"
+    | "createStake"
+    | "createUnstake"
+    | "createStakingWithdrawal"
+  >;
+  restaking: Pick<
+    EigenlayerRestakingApi,
+    | "getRestakingOperators"
+    | "getRestakingPositions"
+    | "getRestakingDelegationHistory"
+    | "getRestakingRewardHistory"
+    | "getRestakingDailyRewards"
+    | "createRestakingDeposit"
+    | "createRestakingDelegation"
+    | "createRestakingUnstake"
+    | "createRestakingUndelegation"
+    | "createRestakingWithdrawal"
+  >;
+}
 
-interface Envelope<T> { success: boolean; data?: T; error?: unknown }
+/**
+ * The SDK builds paths that already carry the `/v1` prefix, so its basePath is
+ * the bare host. Earlier versions of this server took a base URL ending in
+ * `/v1`, so that suffix is dropped rather than producing `/v1/v1/...`.
+ */
+function toBasePath(baseUrl: string): string {
+  return baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
 
-export class AnsetaClient {
-  private readonly apiKey: string;
-  private readonly baseUrl: string;
-  private readonly fetchImpl: typeof fetch;
-
-  constructor(options: AnsetaClientOptions) {
-    if (!options.apiKey) throw new Error("ANSETA_API_KEY is required");
-    this.apiKey = options.apiKey;
-    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
-    this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+export function createApis(options: AnsetaClientOptions): AnsetaApis {
+  if (!options.apiKey) {
+    throw new Error("ANSETA_API_KEY is required");
   }
 
-  async get<T>(path: string, query: Record<string, QueryValue> = {}): Promise<T> {
-    const url = new URL(this.baseUrl + path);
-    for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) url.searchParams.set(key, String(value));
-    }
-    return this.request<T>(url, { method: "GET" });
-  }
+  const configuration = new Configuration({
+    basePath: toBasePath(options.baseUrl ?? DEFAULT_BASE_URL),
+    apiKey: options.apiKey,
+    ...(options.fetchImpl ? { fetchApi: options.fetchImpl } : {}),
+  });
 
-  async post<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>(new URL(this.baseUrl + path), {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: { "content-type": "application/json" },
-    });
-  }
-
-  private async request<T>(url: URL, init: RequestInit): Promise<T> {
-    // The key travels as a header only. The spec also permits an `api_key`
-    // query parameter; query strings land in access logs, so we never use it.
-    let response: Response;
-    try {
-      response = await this.fetchImpl(url, {
-        ...init,
-        headers: { ...(init.headers ?? {}), "x-api-key": this.apiKey },
-      });
-    } catch (error) {
-      // DNS failure, refused connection, TLS error. Status 0 marks "never reached
-      // the API" so the model is not told to fix its arguments.
-      throw new AnsetaApiError(
-        0,
-        "NETWORK_ERROR",
-        `Could not reach the Anseta API at ${url.origin}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-
-    const text = await response.text();
-    let parsed: unknown;
-    try {
-      parsed = text ? JSON.parse(text) : null;
-    } catch {
-      parsed = text;
-    }
-
-    if (!response.ok) throw parseErrorBody(response.status, parsed);
-
-    const envelope = parsed as Envelope<T>;
-    if (envelope && typeof envelope === "object" && "success" in envelope) {
-      if (envelope.success === false) throw parseErrorBody(response.status, parsed);
-      return envelope.data as T;
-    }
-    return parsed as T;
-  }
+  return {
+    info: new APIInfoApi(configuration),
+    staking: new SimpleStakingApi(configuration),
+    restaking: new EigenlayerRestakingApi(configuration),
+  };
 }

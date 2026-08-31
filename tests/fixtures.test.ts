@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import validators from "./fixtures/validators.json" with { type: "json" };
 import stakes from "./fixtures/stakes.json" with { type: "json" };
+import operators from "./fixtures/operators.json" with { type: "json" };
 
 describe("validators fixture", () => {
   it("is a non-empty array", () => {
@@ -28,5 +29,23 @@ describe("stakes fixture", () => {
     const row = (stakes as Record<string, unknown>[])[0]!;
     expect(Object.keys(row)).not.toContain("amountFormatted");
     expect(typeof row.amount).toBe("string");
+  });
+});
+
+describe("operators fixture", () => {
+  it("carries the fields the projection depends on", () => {
+    const row = (operators as Record<string, unknown>[])[0]!;
+
+    for (const field of ["operatorId", "operatorAddress", "moniker", "status", "protocol"]) {
+      expect(Object.keys(row)).toContain(field);
+    }
+  });
+
+  it("carries a services array, which the projection deliberately drops", () => {
+    // Kept in the fixture so a re-capture proves the drop is still deliberate
+    // rather than the field having quietly disappeared upstream.
+    const row = (operators as Record<string, unknown>[])[0]!;
+
+    expect(Array.isArray(row.services)).toBe(true);
   });
 });

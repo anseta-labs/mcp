@@ -4,11 +4,11 @@
 [![npm](https://img.shields.io/npm/v/@anseta/mcp.svg)](https://www.npmjs.com/package/@anseta/mcp)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-An MCP server that exposes the [Anseta](https://anseta.com) staking API to AI agents as 12 tools:
-discovery of networks, tokens, validators and entities; staking positions and reward history; and
-construction of unsigned staking transactions.
+An MCP server that exposes the [Anseta](https://anseta.com) staking API to AI agents as 22 tools:
+discovery of networks, tokens, validators and entities; staking and EigenLayer restaking positions
+and reward history; and construction of unsigned staking and restaking transactions.
 
-**It never holds a key and never broadcasts.** The three `build_*_tx` tools return unsigned
+**It never holds a key and never broadcasts.** The eight `build_*_tx` tools return unsigned
 transaction objects for the user to review and sign in their own wallet. Nothing this server does
 moves funds.
 
@@ -38,8 +38,10 @@ Add to `claude_desktop_config.json` or `.cursor/mcp.json`:
 }
 ```
 
-To point at a non-default host, add `"ANSETA_BASE_URL": "https://…/v1"` to the same `env` block.
-The default is `https://preview.api.stakefi.network/v1`.
+To point at a non-default host, add `"ANSETA_BASE_URL": "https://…"` to the same `env` block. The
+default is `https://preview.api.stakefi.network`. Give the bare host: the client adds the `/v1`
+prefix itself, and a base URL that still ends in `/v1` is accepted for compatibility with older
+configs.
 
 ## Tools
 
@@ -61,6 +63,38 @@ The default is `https://preview.api.stakefi.network/v1`.
 `build_unstake_tx` and `build_withdraw_tx` are two distinct lifecycle steps. Unstaking starts the
 unbonding period; it does not return tokens to the wallet. Withdrawing claims what has finished
 unbonding.
+
+### Restaking (EigenLayer)
+
+Restaking is a separate surface with its own operators, positions and lifecycle. It runs on
+Ethereum only (`ethereum`, `ethereum-hoodi-testnet`) and covers `EIGEN`, `BEIGEN`, `STETH`, `CBETH`
+and `RETH`.
+
+| Tool | What it does |
+|---|---|
+| `list_operators` | EigenLayer operators, with protocol, status and commission |
+| `get_restaking_stakes` | A wallet's restaked positions with one operator, and withdrawal status |
+| `get_restaking_delegation_history` | Delegate and undelegate events for an operator |
+| `get_restaking_reward_history` | On-chain reward-claim transactions for an operator |
+| `get_restaking_daily_rewards` | Daily accrual, split into delegator share and commission |
+| `build_restaking_deposit_tx` | Unsigned approve + depositIntoStrategy transactions |
+| `build_restaking_delegate_tx` | Unsigned transactions that delegate the deposit to an operator |
+| `build_restaking_unstake_tx` | Unsigned transactions that queue a **partial** withdrawal |
+| `build_restaking_undelegate_tx` | Unsigned transactions that queue **everything** and undelegate |
+| `build_restaking_withdraw_tx` | Unsigned transactions that **complete** a matured withdrawal |
+
+The restaking lifecycle is four steps, and skipping one silently does nothing:
+
+```
+deposit  ->  delegate  ->  unstake (part, stays delegated)  ->  withdraw
+                       \-> undelegate (all, ends delegation) -/
+                                    ~7 days on mainnet
+```
+
+`build_restaking_unstake_tx` withdraws a chosen amount of one token and keeps the delegation.
+`build_restaking_undelegate_tx` is all-or-nothing: it queues every restaked asset and ends the
+delegation. Both only *queue* a withdrawal — `build_restaking_withdraw_tx` completes it once the
+delay has passed, and `get_restaking_stakes` reports the completion date.
 
 ## Amounts are base units
 
@@ -88,17 +122,18 @@ server never puts it in a query string.
 ## Development
 
 ```bash
-npm install
-npm test            # vitest, no network access — every test injects a stub fetch
-npx tsc --noEmit
-npm run build       # tsup -> dist/
+pnpm install
+pnpm test           # vitest, no network access — every test injects a stub fetch
+pnpm exec tsc --noEmit
+pnpm lint           # eslint; pnpm lint:fix applies the autofixable rules
+pnpm build          # tsup -> dist/
 ```
 
 Response fixtures under `tests/fixtures/` are currently derived from the upstream schemas rather
 than captured from a live host; see `tests/fixtures/FIELDS.md`. With a staging key:
 
 ```bash
-ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network/v1 npm run capture:fixtures
+ANSETA_API_KEY=<key> ANSETA_BASE_URL=https://staging-api.stakefi.network pnpm capture:fixtures
 ```
 
 `spec/developer_api.json` is a read-only copy of the Anseta OpenAPI spec, kept as reference for the

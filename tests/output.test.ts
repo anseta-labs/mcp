@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitize, project, capList, toToolResult, errorResult } from "../src/format.js";
+import { sanitize, project, trimResponse, toolResult, errorResult } from "../src/output.js";
 
 describe("sanitize", () => {
   it("strips control characters but preserves ordinary whitespace", () => {
@@ -25,13 +25,13 @@ describe("sanitize", () => {
 });
 
 describe("project", () => {
-  it("keeps only the listed fields", () => {
+  it("keeps only the trimResponse fields", () => {
     const rows = [{ validatorId: "1", moniker: "Alice", ownerAddress: "0xabc", details: "long" }];
     expect(project(rows, ["validatorId", "moniker"])).toEqual([{ validatorId: "1", moniker: "Alice" }]);
   });
 
   it("omits fields absent from the row rather than emitting undefined", () => {
-    const rows = [{ validatorId: "1" }];
+    const rows: { validatorId: string; moniker?: string }[] = [{ validatorId: "1" }];
     expect(project(rows, ["validatorId", "moniker"])).toEqual([{ validatorId: "1" }]);
   });
 
@@ -41,28 +41,33 @@ describe("project", () => {
   });
 });
 
-describe("capList", () => {
-  it("reports truncation and the true total", () => {
-    const rows = Array.from({ length: 40 }, (_, i) => i);
-    const result = capList(rows);
-    expect(result.rows).toHaveLength(25);
-    expect(result.truncated).toBe(true);
-    expect(result.total).toBe(40);
+describe("trimResponse", () => {
+  it("caps long lists and reports the true total", () => {
+    const rows = Array.from({ length: 40 }, (_, i) => ({ validatorId: String(i) }));
+    const text = trimResponse(rows, ["validatorId"]).content[0]!.text;
+    expect(JSON.parse(text.slice(0, text.indexOf("\n\nShowing")))).toHaveLength(25);
+    expect(text).toContain("Showing 25 of 40 results");
   });
 
-  it("does not mark short lists as truncated", () => {
-    expect(capList([1, 2, 3]).truncated).toBe(false);
+  it("does not add a truncation note to a short list", () => {
+    const text = trimResponse([{ validatorId: "1" }], ["validatorId"]).content[0]!.text;
+    expect(text).not.toContain("Showing");
+  });
+
+  it("treats a missing list as empty rather than throwing", () => {
+    const result = trimResponse<{ validatorId: string }, "validatorId">(undefined, ["validatorId"]);
+    expect(result.content[0]!.text).toBe("[]");
   });
 });
 
-describe("toToolResult", () => {
+describe("toolResult", () => {
   it("serializes payloads as JSON text", () => {
-    const result = toToolResult({ a: 1 });
+    const result = toolResult({ a: 1 });
     expect(result.content[0]!.text).toContain('"a": 1');
   });
 
   it("appends a note when given one", () => {
-    const result = toToolResult({ a: 1 }, "Showing 25 of 40.");
+    const result = toolResult({ a: 1 }, "Showing 25 of 40.");
     expect(result.content[0]!.text).toContain("Showing 25 of 40.");
   });
 });

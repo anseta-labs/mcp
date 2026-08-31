@@ -1,7 +1,48 @@
+# Dependencies and build output
 node_modules/
 dist/
 coverage/
+.pnpm-store/
+
+# Tooling caches
+*.tsbuildinfo
+.eslintcache
+.vitest/
+
+# Logs
 *.log
-.DS_Store
+
+# Secrets. This repo reads ANSETA_API_KEY from the environment, so nothing
+# matching .env belongs in a commit. An example file is the exception.
 .env
 .env.*
+!.env.example
+
+# AI assistants. Agent guidance is local, not part of the repo: CLAUDE.md is
+# working notes rather than a contract, and rules that must hold belong in
+# eslint.config.js or the README where every contributor sees them.
+CLAUDE.md
+.claude/settings.local.json
+.claude/*.local.json
+CLAUDE.local.md
+AGENTS.local.md
+.mcp.local.json
+.cursor/
+.cursorignore
+.aider*
+.continue/
+.windsurf/
+.gemini/
+.codeium/
+.specstory/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Scratch. A place to keep local captures and one-off scripts out of the tree.
+scratch/
+tmp/

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { AnsetaApiError, parseErrorBody } from "../src/errors.js";
+import { FetchError, ResponseError } from "@anseta/typescript-sdk";
+import { AnsetaApiError, parseErrorBody, toAnsetaError } from "../src/errors.js";
 
 describe("parseErrorBody", () => {
   it("extracts code and message from the ErrorResponse envelope", () => {
@@ -7,6 +8,7 @@ describe("parseErrorBody", () => {
       success: false,
       error: { code: "INVALID_NETWORK", message: "Unknown network 'polygon'" },
     });
+
     expect(err).toBeInstanceOf(AnsetaApiError);
     expect(err.code).toBe("INVALID_NETWORK");
     expect(err.status).toBe(400);
@@ -23,6 +25,7 @@ describe("parseErrorBody", () => {
       success: false,
       error: { code: "INVALID_NETWORK", message: "Unknown network 'polygon'" },
     });
+
     const msg = err.toModelMessage();
     expect(msg).toContain("Unknown network 'polygon'");
     expect(msg).toContain("Check the arguments");
@@ -45,5 +48,46 @@ describe("transport failures", () => {
     const msg = err.toModelMessage();
     expect(msg).toContain("unreachable");
     expect(msg).not.toContain("Check the arguments");
+  });
+});
+
+describe("toAnsetaError", () => {
+  it("reads the error envelope off a ResponseError's body", async () => {
+    const response = new Response(
+      JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: "no such validator" } }),
+      { status: 404, headers: { "content-type": "application/json" } },
+    );
+
+    const err = await toAnsetaError(new ResponseError(response, "Response returned an error code"));
+    expect(err.status).toBe(404);
+    expect(err.code).toBe("NOT_FOUND");
+    expect(err.toModelMessage()).toContain("no such validator");
+  });
+
+  it("reports the cause of a transport failure, not the SDK's wrapper text", async () => {
+    // What Node throws for an unresolvable host, wrapped the way the SDK wraps it.
+    const socket = new Error("getaddrinfo ENOTFOUND preview.api.invalid");
+    const fetchFailed = new TypeError("fetch failed", { cause: socket });
+    const err = await toAnsetaError(
+      new FetchError(fetchFailed, "The request failed and the interceptors did not return an alternative response"),
+    );
+
+    expect(err.status).toBe(0);
+    expect(err.message).toContain("ENOTFOUND preview.api.invalid");
+    expect(err.message).not.toContain("interceptors");
+  });
+});
+
+describe("a 2xx body that reports failure", () => {
+  // Handlers guard their own calls with parseErrorBody(200, response); this is
+  // the translation that guard depends on.
+  it("keeps the envelope's code and message", () => {
+    const err = parseErrorBody(200, {
+      success: false,
+      error: { code: "NOT_LIVE", message: "not live yet" },
+    });
+
+    expect(err.code).toBe("NOT_LIVE");
+    expect(err.toModelMessage()).toContain("not live yet");
   });
 });
