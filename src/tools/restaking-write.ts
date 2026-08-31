@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { RestakingNetwork, RestakingToken } from "@anseta/typescript-sdk";
-import { ensureSuccess } from "../errors.js";
+import { parseErrorBody } from "../errors.js";
 import { amountArg, decimalsArg } from "./args.js";
 import { buildTxResult, reviewAmount } from "./review.js";
 import { defineTool } from "./types.js";
@@ -39,14 +39,15 @@ export const restakingWriteTools: AnsetaTool[] = [
       ...amountSchema,
     },
     handler: async (args, ctx) => {
-      const response = ensureSuccess(await ctx.restaking.createRestakingDeposit({
+      const response = await ctx.restaking.createRestakingDeposit({
         restakingDepositRequest: {
           network: args.network,
           token: args.token,
           staker: args.staker,
           amount: args.amount,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "RESTAKING DEPOSIT (step 1 of 2 - delegate afterwards)",
@@ -70,13 +71,14 @@ export const restakingWriteTools: AnsetaTool[] = [
       operator: z.string().describe("EigenLayer operator address from list_operators."),
     },
     handler: async (args, ctx) => {
-      const response = ensureSuccess(await ctx.restaking.createRestakingDelegation({
+      const response = await ctx.restaking.createRestakingDelegation({
         restakingDelegateRequest: {
           network: args.network,
           staker: args.staker,
           operator: args.operator,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "RESTAKING DELEGATE (step 2 of 2)",
@@ -100,14 +102,15 @@ export const restakingWriteTools: AnsetaTool[] = [
       ...amountSchema,
     },
     handler: async (args, ctx) => {
-      const response = ensureSuccess(await ctx.restaking.createRestakingUnstake({
+      const response = await ctx.restaking.createRestakingUnstake({
         restakingUnstakeRequest: {
           network: args.network,
           token: args.token,
           staker: args.staker,
           amount: args.amount,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "RESTAKING UNSTAKE (queues a partial withdrawal, delegation kept)",
@@ -130,12 +133,13 @@ export const restakingWriteTools: AnsetaTool[] = [
       staker: stakerArg,
     },
     handler: async (args, ctx) => {
-      const response = ensureSuccess(await ctx.restaking.createRestakingUndelegation({
+      const response = await ctx.restaking.createRestakingUndelegation({
         restakingUndelegateRequest: {
           network: args.network,
           staker: args.staker,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "RESTAKING UNDELEGATE (queues ALL restaked assets and ends the delegation)",
@@ -157,13 +161,14 @@ export const restakingWriteTools: AnsetaTool[] = [
       staker: stakerArg,
     },
     handler: async (args, ctx) => {
-      const response = ensureSuccess(await ctx.restaking.createRestakingWithdrawal({
+      const response = await ctx.restaking.createRestakingWithdrawal({
         restakingWithdrawRequest: {
           network: args.network,
           token: args.token,
           staker: args.staker,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "RESTAKING WITHDRAW (claims matured withdrawals)",

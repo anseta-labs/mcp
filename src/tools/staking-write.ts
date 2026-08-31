@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { StakingNetwork, StakingToken } from "@anseta/typescript-sdk";
 import { NETWORK_RULES } from "../constants.js";
-import { ensureSuccess } from "../errors.js";
+import { parseErrorBody } from "../errors.js";
 import { errorResult } from "../output.js";
 import { amountArg, decimalsArg } from "./args.js";
 import { buildTxResult, reviewAmount } from "./review.js";
@@ -87,7 +87,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       const invalid = checkStakeRules(args);
       if (invalid) return errorResult(invalid);
 
-      const response = ensureSuccess(await ctx.staking.createStake({
+      const response = await ctx.staking.createStake({
         simplifiedStakeRequest: {
           network: args.network,
           token: args.token,
@@ -96,7 +96,8 @@ export const stakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
           params: args.params,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult("STAKE", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
@@ -110,7 +111,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       const invalid = checkStakeRules(args);
       if (invalid) return errorResult(invalid);
 
-      const response = ensureSuccess(await ctx.staking.createUnstake({
+      const response = await ctx.staking.createUnstake({
         simplifiedStakeRequest: {
           network: args.network,
           token: args.token,
@@ -119,7 +120,8 @@ export const stakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
           params: args.params,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult("UNSTAKE (begins unbonding)", reviewFields(args, stakeReviewAmount(args)), response.data);
     },
@@ -133,7 +135,7 @@ export const stakingWriteTools: AnsetaTool[] = [
       const invalid = checkValidatorRule(args);
       if (invalid) return errorResult(invalid);
 
-      const response = ensureSuccess(await ctx.staking.createStakingWithdrawal({
+      const response = await ctx.staking.createStakingWithdrawal({
         createStakingWithdrawalRequest: {
           network: args.network,
           token: args.token,
@@ -141,7 +143,8 @@ export const stakingWriteTools: AnsetaTool[] = [
           validator: args.validator,
           params: args.params,
         },
-      }));
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
 
       return buildTxResult(
         "WITHDRAW (claims unbonded tokens or rewards)",

@@ -75,8 +75,10 @@ Tool output is model context, so it is shaped rather than passed through:
   helps* (400 → fix args; 401 → don't retry, report; 429 → back off; status 0 → connectivity). Keep
   that property when adding cases.
 - **A 2xx can still be a failure.** The API's envelope carries `success`, and the generated client
-  does not look at it. Every handler wraps its call in `ensureSuccess()`, without which a failed read
-  reads as an empty list and a failed `build_*_tx` reads as a transaction ready to sign.
+  does not look at it, so every handler guards its own call on the line after it:
+  `if (response.success === false) throw parseErrorBody(200, response);`. Without that a failed read
+  reads as an empty list and a failed `build_*_tx` reads as a transaction ready to sign. It is
+  repeated per call site rather than hidden in a helper that wraps the `await`.
 
 ### Domain invariants
 

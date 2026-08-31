@@ -5,7 +5,7 @@ import {
   type Stake,
   type Validator,
 } from "@anseta/typescript-sdk";
-import { ensureSuccess } from "../errors.js";
+import { parseErrorBody } from "../errors.js";
 import { trimResponse } from "../output.js";
 import { limitArg } from "./args.js";
 import { DAILY_FIELDS, DELEGATION_FIELDS, REWARD_FIELDS } from "./fields.js";
@@ -34,11 +34,13 @@ export const stakingReadTools: AnsetaTool[] = [
       status: z.enum(["LIVE", "PLANNED"]).optional(),
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.staking.getValidators({
+      const response = await ctx.staking.getValidators({
         network: args.network,
         status: args.status,
-      }));
-      return trimResponse(data, VALIDATOR_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, VALIDATOR_FIELDS);
     },
   }),
   defineTool({
@@ -53,13 +55,15 @@ export const stakingReadTools: AnsetaTool[] = [
     },
     handler: async (args, ctx) => {
       // This endpoint nests its array under `data.stakes`, unlike the others.
-      const { data } = ensureSuccess(await ctx.staking.getStakingPositions({
+      const response = await ctx.staking.getStakingPositions({
         staker: args.staker,
         network: args.network,
         validator: args.validator,
         token: args.token,
-      }));
-      return trimResponse(data?.stakes, STAKE_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data?.stakes, STAKE_FIELDS);
     },
   }),
   defineTool({
@@ -72,12 +76,14 @@ export const stakingReadTools: AnsetaTool[] = [
       limit: limitArg,
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.staking.getStakingDelegationHistory({
+      const response = await ctx.staking.getStakingDelegationHistory({
         validatorId: args.validatorId,
         eventType: args.eventType,
         limit: String(args.limit),
-      }));
-      return trimResponse(data, DELEGATION_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, DELEGATION_FIELDS);
     },
   }),
   defineTool({
@@ -89,11 +95,13 @@ export const stakingReadTools: AnsetaTool[] = [
       limit: limitArg,
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.staking.getStakingRewardHistory({
+      const response = await ctx.staking.getStakingRewardHistory({
         validatorId: args.validatorId,
         limit: String(args.limit),
-      }));
-      return trimResponse(data, REWARD_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, REWARD_FIELDS);
     },
   }),
   defineTool({
@@ -107,13 +115,15 @@ export const stakingReadTools: AnsetaTool[] = [
       limit: limitArg,
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.staking.getStakingDailyRewards({
+      const response = await ctx.staking.getStakingDailyRewards({
         validatorId: args.validatorId,
         startDate: args.startDate,
         endDate: args.endDate,
         limit: String(args.limit),
-      }));
-      return trimResponse(data, DAILY_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, DAILY_FIELDS);
     },
   }),
 ];

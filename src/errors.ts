@@ -42,6 +42,15 @@ const ErrorEnvelope = z.object({
   }),
 });
 
+/**
+ * Builds the error for a body that carries the API's error envelope.
+ *
+ * Handlers also call this with status 200: a 2xx response can still say
+ * `success: false`, and the generated client does not look at that. Left
+ * unchecked, a failed read reports an empty list and a failed build reports a
+ * transaction ready to sign, so every handler guards its own call with
+ * `if (response.success === false) throw parseErrorBody(200, response);`.
+ */
 export function parseErrorBody(status: number, body: unknown): AnsetaApiError {
   const parsed = ErrorEnvelope.safeParse(body);
   if (parsed.success) {
@@ -89,15 +98,4 @@ function describeCause(error: unknown): string {
     current = current.cause;
   }
   return messages.length > 0 ? messages.join(": ") : String(error);
-}
-
-/**
- * A 2xx response can still carry `success: false` with an error envelope, and
- * the generated client does not look at it. Left unchecked, a failed read is
- * reported as an empty list and a failed build is reported as a transaction
- * ready to sign, so this is raised as an error like any other.
- */
-export function ensureSuccess<T extends { success: boolean }>(response: T): T {
-  if (response.success === false) throw parseErrorBody(200, response);
-  return response;
 }

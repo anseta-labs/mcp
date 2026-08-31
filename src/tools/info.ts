@@ -8,7 +8,7 @@ import {
   type StakingOption,
   type TokenInfo,
 } from "@anseta/typescript-sdk";
-import { ensureSuccess } from "../errors.js";
+import { parseErrorBody } from "../errors.js";
 import { trimResponse } from "../output.js";
 import { defineTool } from "./types.js";
 import type { AnsetaTool } from "./types.js";
@@ -38,11 +38,13 @@ export const infoTools: AnsetaTool[] = [
       testnet: z.enum(["true", "false"]).optional().describe("Filter to testnets or mainnets only."),
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.info.getNetworks({
+      const response = await ctx.info.getNetworks({
         network: args.network,
         testnet: args.testnet,
-      }));
-      return trimResponse(data, NETWORK_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, NETWORK_FIELDS);
     },
   }),
   defineTool({
@@ -56,13 +58,15 @@ export const infoTools: AnsetaTool[] = [
       tokenAddress: z.string().optional().describe("Filter by token contract address."),
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.info.getTokens({
+      const response = await ctx.info.getTokens({
         network: args.network,
         symbol: args.symbol,
         testnet: args.testnet,
         tokenAddress: args.tokenAddress,
-      }));
-      return trimResponse(data, TOKEN_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, TOKEN_FIELDS);
     },
   }),
   defineTool({
@@ -77,14 +81,16 @@ export const infoTools: AnsetaTool[] = [
       testnet: z.enum(["true", "false"]).optional(),
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.info.getStakingOptions({
+      const response = await ctx.info.getStakingOptions({
         network: args.network,
         token: args.token,
         protocol: args.protocol,
         status: args.status,
         testnet: args.testnet,
-      }));
-      return trimResponse(data, OPTION_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, OPTION_FIELDS);
     },
   }),
   defineTool({
@@ -96,11 +102,13 @@ export const infoTools: AnsetaTool[] = [
       entityType: z.string().optional(),
     },
     handler: async (args, ctx) => {
-      const { data } = ensureSuccess(await ctx.info.getEntities({
+      const response = await ctx.info.getEntities({
         active: args.active,
         entityType: args.entityType,
-      }));
-      return trimResponse(data, ENTITY_FIELDS);
+      });
+      if (response.success === false) throw parseErrorBody(200, response);
+
+      return trimResponse(response.data, ENTITY_FIELDS);
     },
   }),
 ];
