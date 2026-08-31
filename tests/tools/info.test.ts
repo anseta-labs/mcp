@@ -9,6 +9,7 @@ function toolNamed(name: string) {
   if (!tool) {
     throw new Error(`missing tool ${name}`);
   }
+
   return tool;
 }
 
@@ -34,6 +35,7 @@ describe("info tools", () => {
       success: true,
       data: [{ network: "solana", type: "solana", testnet: false }],
     }));
+
     const ctx = stubApis({ getNetworks });
     await toolNamed("list_networks").handler({ network: "solana" }, ctx);
     expect(getNetworks).toHaveBeenCalledWith({ network: "solana", testnet: undefined });
@@ -47,6 +49,7 @@ describe("info tools", () => {
           native: true, testnet: false, tokenAddress: "0xabc", internalId: "drop-me" },
       ],
     }));
+
     const ctx = stubApis({ getTokens });
     const result = await toolNamed("list_tokens").handler({}, ctx);
     expect(result.content[0]!.text).toContain("SOL");

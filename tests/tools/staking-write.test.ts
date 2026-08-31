@@ -8,6 +8,7 @@ function toolNamed(name: string) {
   if (!tool) {
     throw new Error(`missing tool ${name}`);
   }
+
   return tool;
 }
 
@@ -16,6 +17,7 @@ const BASE = { network: "solana", token: "SOL", staker: "abc", decimals: 9 } as 
 async function callStake(args: Record<string, unknown>) {
   const post = vi.fn(async () => ({ success: true, data: { transactions: [] } }));
   const result = await toolNamed("build_stake_tx").handler({ ...BASE, ...args }, stubApis({ createStake: post }));
+
   return { text: result.content[0]!.text, isError: result.isError === true, post };
 }
 
@@ -37,6 +39,7 @@ describe("argument rules", () => {
     const { isError } = await callStake({
       network: "cardano", token: "ADA", staker: "addr1", validator: "pool1",
     });
+
     expect(isError).toBe(false);
   });
 
@@ -78,6 +81,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", amount: "1000", decimals: 9 }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(post).not.toHaveBeenCalled();
   });
@@ -88,6 +92,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000", decimals: 9 }, ctx,
     );
+
     const text = result.content[0]!.text;
     expect(text).toContain("REVIEW BEFORE SIGNING");
     expect(text).toContain("1 SOL");
@@ -101,6 +106,7 @@ describe("write tools", () => {
     await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000", decimals: 9 }, ctx,
     );
+
     expect(post).toHaveBeenCalledWith({
       simplifiedStakeRequest: {
         network: "solana", token: "SOL", staker: "abc", validator: "vote1", amount: "1000000000",
@@ -114,6 +120,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000", decimals: 9 }, ctx,
     );
+
     expect(result.content[0]!.text).toContain("0.0015 SOL");
   });
 
@@ -123,6 +130,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1500000" }, ctx,
     );
+
     // decimals only ever decorates the review line, so its absence must not
     // block a call the API would have accepted.
     expect(result.isError).toBeUndefined();
@@ -135,10 +143,12 @@ describe("write tools", () => {
       success: false,
       error: { code: "UNSUPPORTED_NETWORK", message: "staking is not live for this pair" },
     }));
+
     const ctx = stubApis({ createStake: post });
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain("staking is not live for this pair");
     expect(result.content[0]!.text).not.toContain("REVIEW BEFORE SIGNING");
@@ -150,6 +160,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_stake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 }, ctx,
     );
+
     const body = result.content[0]!.text.split("\n\nREVIEW")[0]!;
     expect(JSON.parse(body)).toEqual({ transactions: [{ encodedTx: "0xdead" }] });
   });
@@ -160,6 +171,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_unstake_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "v", amount: "1", decimals: 9 }, ctx,
     );
+
     expect(result.content[0]!.text).toContain("unsigned");
   });
 
@@ -173,6 +185,7 @@ describe("write tools", () => {
     const result = await toolNamed("build_withdraw_tx").handler(
       { network: "solana", token: "SOL", staker: "abc" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(post).not.toHaveBeenCalled();
   });
@@ -192,6 +205,7 @@ describe("build_withdraw_tx", () => {
     const result = await toolNamed("build_withdraw_tx").handler(
       { network: "solana", token: "SOL", staker: "abc", validator: "vote1" }, ctx,
     );
+
     expect(result.isError).toBeUndefined();
     expect(post).toHaveBeenCalled();
   });

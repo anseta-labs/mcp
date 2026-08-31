@@ -19,6 +19,7 @@ const VALIDATOR_FIELDS = [
   "validatorId", "validatorAddress", "moniker", "status", "network",
   "commissionRate", "publicDelegationEnabled", "website",
 ] as const satisfies readonly (keyof Validator)[];
+
 const STAKE_FIELDS = [
   "network", "token", "tokenAddress", "stakerAddress", "validatorAddress",
   "amount", "status", "unstakingCompletionDate", "rewards",
@@ -38,6 +39,7 @@ export const stakingReadTools: AnsetaTool[] = [
         network: args.network,
         status: args.status,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -63,6 +65,7 @@ export const stakingReadTools: AnsetaTool[] = [
         validator: args.validator,
         token: args.token,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -85,6 +88,7 @@ export const stakingReadTools: AnsetaTool[] = [
         eventType: args.eventType,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -105,6 +109,7 @@ export const stakingReadTools: AnsetaTool[] = [
         validatorId: args.validatorId,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -129,6 +134,7 @@ export const stakingReadTools: AnsetaTool[] = [
         endDate: args.endDate,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }

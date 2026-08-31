@@ -15,6 +15,7 @@ import type { AnsetaTool } from "./types.js";
 const networkArg = z
   .enum(RestakingNetwork)
   .describe("Restaking network identifier. EigenLayer runs on Ethereum only.");
+
 const stakerArg = z.string().describe("Ethereum address of the staker, as 0x hex.");
 const tokenArg = z
   .enum(RestakingToken)
@@ -47,6 +48,7 @@ export const restakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -80,6 +82,7 @@ export const restakingWriteTools: AnsetaTool[] = [
           operator: args.operator,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -114,6 +117,7 @@ export const restakingWriteTools: AnsetaTool[] = [
           amount: args.amount,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -145,6 +149,7 @@ export const restakingWriteTools: AnsetaTool[] = [
           staker: args.staker,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -176,6 +181,7 @@ export const restakingWriteTools: AnsetaTool[] = [
           staker: args.staker,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }

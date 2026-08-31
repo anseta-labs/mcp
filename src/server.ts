@@ -20,6 +20,7 @@ export function createAnsetaServer(config: ServerConfig): McpServer {
     baseUrl: config.baseUrl,
     fetchImpl: config.fetchImpl,
   });
+
   const server = new McpServer({ name: "anseta", version: pkg.version });
 
   for (const tool of allTools) {
@@ -29,5 +30,6 @@ export function createAnsetaServer(config: ServerConfig): McpServer {
       (args) => tool.handler(args, apis),
     );
   }
+
   return server;
 }

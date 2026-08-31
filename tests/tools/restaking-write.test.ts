@@ -7,6 +7,7 @@ function toolNamed(name: string) {
   if (!tool) {
     throw new Error(`no tool named ${name}`);
   }
+
   return tool;
 }
 
@@ -47,6 +48,7 @@ describe("restaking write tools", () => {
     await toolNamed("build_restaking_deposit_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc", amount: "1000000000000000000", decimals: 18 }, ctx,
     );
+
     expect(post).toHaveBeenCalledWith({
       restakingDepositRequest: {
         network: "ethereum", token: "STETH", staker: "0xabc", amount: "1000000000000000000",
@@ -59,6 +61,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_deposit_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc", amount: "1500000000000000000", decimals: 18 }, ctx,
     );
+
     const text = result.content[0]!.text;
     expect(text).toContain("1.5 STETH");
     expect(text).toContain("step 1 of 2");
@@ -70,9 +73,11 @@ describe("restaking write tools", () => {
     await toolNamed("build_restaking_delegate_tx").handler(
       { network: "ethereum", staker: "0xabc", operator: "0xop" }, ctx,
     );
+
     expect(post).toHaveBeenCalledWith({
       restakingDelegateRequest: { network: "ethereum", staker: "0xabc", operator: "0xop" },
     });
+
     expect(Object.keys(toolNamed("build_restaking_delegate_tx").schema)).not.toContain("amount");
   });
 
@@ -82,9 +87,11 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_undelegate_tx").handler(
       { network: "ethereum", staker: "0xabc" }, ctx,
     );
+
     expect(post).toHaveBeenCalledWith({
       restakingUndelegateRequest: { network: "ethereum", staker: "0xabc" },
     });
+
     expect(Object.keys(toolNamed("build_restaking_undelegate_tx").schema)).toEqual(["network", "staker"]);
     expect(result.content[0]!.text).toContain("ALL restaked assets");
   });
@@ -94,6 +101,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_unstake_tx").handler(
       { network: "ethereum", token: "EIGEN", staker: "0xabc", amount: "1", decimals: 18 }, ctx,
     );
+
     expect(result.content[0]!.text).toContain("delegation kept");
   });
 
@@ -107,6 +115,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_deposit_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc", amount: "1.5" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain("base denomination");
     expect(post).not.toHaveBeenCalled();
@@ -118,6 +127,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_deposit_tx").handler(
       { network: "solana", token: "STETH", staker: "0xabc", amount: "1" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(post).not.toHaveBeenCalled();
   });
@@ -128,6 +138,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_unstake_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(post).not.toHaveBeenCalled();
   });
@@ -137,10 +148,12 @@ describe("restaking write tools", () => {
       success: false,
       error: { code: "NO_QUEUED_WITHDRAWAL", message: "nothing has matured yet" },
     }));
+
     const ctx = stubApis({ createRestakingWithdrawal: post });
     const result = await toolNamed("build_restaking_withdraw_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain("nothing has matured yet");
     expect(result.content[0]!.text).not.toContain("REVIEW BEFORE SIGNING");
@@ -151,6 +164,7 @@ describe("restaking write tools", () => {
     const result = await toolNamed("build_restaking_deposit_tx").handler(
       { network: "ethereum", token: "STETH", staker: "0xabc", amount: "1", decimals: 18 }, ctx,
     );
+
     const body = result.content[0]!.text.split("\n\nREVIEW")[0]!;
     expect(JSON.parse(body)).toEqual({ transactions: [{ encodedTx: "0xdead" }] });
   });

@@ -29,16 +29,20 @@ export function sanitize<T>(value: T): T;
 export function sanitize(value: unknown): unknown {
   if (typeof value === "string") {
     const cleaned = value.replace(CONTROL_CHARS, "");
+
     return cleaned.length > MAX_FIELD_CHARS
       ? cleaned.slice(0, MAX_FIELD_CHARS) + "..."
       : cleaned;
   }
+
   if (Array.isArray(value)) {
     return Array.from<unknown>(value).map(sanitize);
   }
+
   if (value && typeof value === "object") {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sanitize(v)]));
   }
+
   return value;
 }
 
@@ -61,12 +65,14 @@ export function project<T extends object, K extends keyof T>(
         out[field] = sanitize(value);
       }
     }
+
     return out;
   });
 }
 
 export function toolResult(payload: unknown, note?: string): ToolResult {
   const body = JSON.stringify(payload, null, 2);
+
   return { content: [{ type: "text", text: note ? `${body}\n\n${note}` : body }] };
 }
 
@@ -84,5 +90,6 @@ export function trimResponse<T extends object, K extends keyof T>(
     all.length > capped.length
       ? `Showing ${capped.length} of ${all.length} results. Narrow the filters to see others.`
       : undefined;
+
   return toolResult(project(capped, fields), note);
 }

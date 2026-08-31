@@ -8,6 +8,7 @@ function toolNamed(name: string) {
   if (!tool) {
     throw new Error(`missing tool ${name}`);
   }
+
   return tool;
 }
 
@@ -56,6 +57,7 @@ describe("staking read tools", () => {
       transactionHash: "0xdead", network: "solana", blockNumber: "12345",
       delegatorAddress: "abc", validatorAddress: "def", decimals: 9,
     }] }));
+
     const ctx = stubApis({ getStakingDelegationHistory });
     const result = await toolNamed("get_delegation_history").handler({ validatorId: "v-1" }, ctx);
     expect(result.content[0]!.text).toContain("amountFormatted");
@@ -69,6 +71,7 @@ describe("staking read tools", () => {
       commissionRate: "0.05", publicDelegationEnabled: true, website: "https://x.invalid",
       ownerAddress: "owner", stakingContract: "contract", details: "long text",
     }] }));
+
     const ctx = stubApis({ getValidators });
     const result = await toolNamed("list_validators").handler({ network: "solana" }, ctx);
     const text = result.content[0]!.text;
@@ -84,10 +87,12 @@ describe("staking read tools", () => {
       stakerAddress: "DYw8", validatorAddress: "he1i", amount: "1000000000",
       status: "staked", rewards: "12500000", internalId: "drop-me",
     }] } }));
+
     const ctx = stubApis({ getStakingPositions });
     const result = await toolNamed("get_stakes").handler(
       { staker: "DYw8", network: "solana", validator: "he1i", token: "SOL" }, ctx,
     );
+
     const text = result.content[0]!.text;
     expect(text).toContain("stakerAddress");
     expect(text).toContain('"amount": "1000000000"');
@@ -100,10 +105,12 @@ describe("staking read tools", () => {
       { network: "mantra", token: "MANTRA", stakerAddress: "mantra1fz9",
         validatorAddress: "mantravaloper1r3s", amount: "11500000000002370806", status: "staked" },
     ] } }));
+
     const ctx = stubApis({ getStakingPositions });
     const result = await toolNamed("get_stakes").handler(
       { staker: "mantra1fz9", network: "mantra", validator: "mantravaloper1r3s", token: "MANTRA" }, ctx,
     );
+
     expect(result.content[0]!.text).toContain("11500000000002370806");
   });
 
@@ -113,6 +120,7 @@ describe("staking read tools", () => {
     const result = await toolNamed("get_stakes").handler(
       { staker: "a", network: "solana", validator: "v", token: "SOL" }, ctx,
     );
+
     expect(result.content[0]!.text).toBe("[]");
     expect(result.isError).toBeUndefined();
   });

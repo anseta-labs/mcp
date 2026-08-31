@@ -30,6 +30,7 @@ export class AnsetaApiError extends Error {
     if (this.status === 0) {
       return `Anseta API unreachable (${this.code}): ${this.message}\n\nThis is a connectivity or configuration problem, not a bad argument. Check ANSETA_BASE_URL and network access; retrying the same call is unlikely to help.`;
     }
+
     return `Anseta API error ${this.status} (${this.code}): ${this.message}\n\n${ADVICE[this.status] ?? DEFAULT_ADVICE}`;
   }
 }
@@ -70,8 +71,10 @@ export function parseErrorBody(status: number, body: unknown): AnsetaApiError {
   const parsed = ErrorEnvelope.safeParse(body);
   if (parsed.success) {
     const { code, message, details } = parsed.data.error;
+
     return new AnsetaApiError(status, code, message, details);
   }
+
   return new AnsetaApiError(status, "UPSTREAM_ERROR", `Request failed with status ${status}`, body);
 }
 
@@ -93,12 +96,14 @@ export async function toAnsetaError(error: unknown): Promise<AnsetaApiError> {
       .clone()
       .json()
       .catch(() => undefined);
+
     return parseErrorBody(error.response.status, body);
   }
 
   // No response at all: DNS failure, refused connection, a bad base URL. The
   // SDK's own wrapper message says nothing useful, so report its cause instead.
   const cause = error instanceof FetchError ? error.cause : error;
+
   return new AnsetaApiError(0, "NETWORK_ERROR", describeCause(cause));
 }
 
@@ -114,7 +119,9 @@ function describeCause(error: unknown): string {
     if (current.message && !messages.includes(current.message)) {
       messages.push(current.message);
     }
+
     current = current.cause;
   }
+
   return messages.length > 0 ? messages.join(": ") : String(error);
 }

@@ -96,6 +96,7 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -121,6 +122,7 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -145,6 +147,7 @@ export const stakingWriteTools: AnsetaTool[] = [
           params: args.params,
         },
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }

@@ -18,12 +18,15 @@ import type { AnsetaTool } from "./types.js";
 const NETWORK_FIELDS = [
   "network", "type", "nativeToken", "testnet", "chainId", "explorer",
 ] as const satisfies readonly (keyof NetworkConfig)[];
+
 const TOKEN_FIELDS = [
   "symbol", "network", "decimals", "denomination", "testnet", "tokenAddress",
 ] as const satisfies readonly (keyof TokenInfo)[];
+
 const OPTION_FIELDS = [
   "network", "token", "status", "info",
 ] as const satisfies readonly (keyof StakingOption)[];
+
 const ENTITY_FIELDS = [
   "entityId", "name", "entityType", "active", "description",
 ] as const satisfies readonly (keyof Entity)[];
@@ -42,6 +45,7 @@ export const infoTools: AnsetaTool[] = [
         network: args.network,
         testnet: args.testnet,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -66,6 +70,7 @@ export const infoTools: AnsetaTool[] = [
         testnet: args.testnet,
         tokenAddress: args.tokenAddress,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -92,6 +97,7 @@ export const infoTools: AnsetaTool[] = [
         status: args.status,
         testnet: args.testnet,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -112,6 +118,7 @@ export const infoTools: AnsetaTool[] = [
         active: args.active,
         entityType: args.entityType,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }

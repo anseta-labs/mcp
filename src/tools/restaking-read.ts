@@ -19,6 +19,7 @@ const OPERATOR_FIELDS = [
   "operatorId", "operatorAddress", "moniker", "status", "protocol",
   "commissionRate", "publicDelegationEnabled",
 ] as const satisfies readonly (keyof Operator)[];
+
 const RESTAKING_STAKE_FIELDS = [
   "network", "token", "tokenAddress", "stakerAddress", "operatorAddress",
   "amount", "status", "unstakingCompletionDate",
@@ -57,6 +58,7 @@ export const restakingReadTools: AnsetaTool[] = [
         operator: args.operator,
         token: args.token,
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -82,6 +84,7 @@ export const restakingReadTools: AnsetaTool[] = [
         eventType: args.eventType,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -102,6 +105,7 @@ export const restakingReadTools: AnsetaTool[] = [
         validatorId: args.operatorId,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }
@@ -126,6 +130,7 @@ export const restakingReadTools: AnsetaTool[] = [
         endDate: args.endDate,
         limit: String(args.limit),
       });
+
       if (response.success === false) {
         throw parseErrorBody(200, response);
       }

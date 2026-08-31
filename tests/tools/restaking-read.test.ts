@@ -7,6 +7,7 @@ function toolNamed(name: string) {
   if (!tool) {
     throw new Error(`no tool named ${name}`);
   }
+
   return tool;
 }
 
@@ -38,6 +39,7 @@ describe("restaking read tools", () => {
         publicDelegationEnabled: true, internalId: "drop-me",
       }],
     }));
+
     const ctx = stubApis({ getRestakingOperators });
     const result = await toolNamed("list_operators").handler({}, ctx);
     const text = result.content[0]!.text;
@@ -52,10 +54,12 @@ describe("restaking read tools", () => {
       amount: "1500000000000000000", status: "restaked",
       unstakingCompletionDate: "2026-09-07T00:00:00Z", internalId: "drop-me",
     }] } }));
+
     const ctx = stubApis({ getRestakingPositions });
     const result = await toolNamed("get_restaking_stakes").handler(
       { staker: "0xabc", network: "ethereum", operator: "0xop" }, ctx,
     );
+
     const text = result.content[0]!.text;
     expect(text).toContain("1500000000000000000");
     expect(text).toContain("unstakingCompletionDate");
@@ -68,6 +72,7 @@ describe("restaking read tools", () => {
     const result = await toolNamed("get_restaking_stakes").handler(
       { staker: "0xabc", network: "ethereum", operator: "0xop" }, ctx,
     );
+
     expect(result.content[0]!.text).toBe("[]");
     expect(result.isError).toBeUndefined();
   });
@@ -104,6 +109,7 @@ describe("restaking read tools", () => {
       timestamp: "2026-01-01T00:00:00Z", transactionHash: "0xdead",
       network: "ethereum", blockNumber: "12345",
     }] }));
+
     const ctx = stubApis({ getRestakingRewardHistory });
     const result = await toolNamed("get_restaking_reward_history").handler({ operatorId: "op-1" }, ctx);
     const text = result.content[0]!.text;
@@ -116,6 +122,7 @@ describe("restaking read tools", () => {
       success: false,
       error: { code: "UPSTREAM", message: "operator index unavailable" },
     }));
+
     const ctx = stubApis({ getRestakingOperators });
     const result = await toolNamed("list_operators").handler({}, ctx);
     expect(result.isError).toBe(true);

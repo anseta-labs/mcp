@@ -28,5 +28,6 @@ export function stubApis(stubs: Stubs): AnsetaApis {
       stubs[name as keyof Stubs] ??
       (() => Promise.reject(new Error(`${name} was not stubbed`))),
   });
+
   return { info: group, staking: group, restaking: group };
 }

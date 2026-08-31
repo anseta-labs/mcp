@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run test && pnpm run build",
     "typecheck:tests": "tsc -p tsconfig.test.json",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [
     "mcp",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^26.3.0",
     "eslint": "^9.39.5",
     "tsup": "^8.5.1",

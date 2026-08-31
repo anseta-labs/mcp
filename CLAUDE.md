@@ -11,6 +11,7 @@ pnpm exec vitest run -t "rejects a network"     # a single test by name
 pnpm exec tsc --noEmit                # typecheck src
 pnpm exec tsc -p tsconfig.test.json   # typecheck src + tests + scripts (CI runs both)
 pnpm lint                             # eslint, incl. bans on `any` and type assertions
+pnpm lint:fix                         # applies the autofixable rules (braces, blank lines)
 pnpm build                            # tsup -> dist/ (esm + .d.ts)
 ```
 
@@ -185,9 +186,29 @@ are not related
   }
   ```
 
-  This is enforced, not conventional: eslint's `curly: ["error", "all"]`. Note that `--fix` only
-  inserts the braces (`if (x) {return y;}`) — it will not break the line, because that is a
-  formatter's job and there is no formatter here. Put the newline in by hand.
+  Enforced by eslint's `curly: ["error", "all"]`. Note that `--fix` only inserts the braces
+  (`if (x) {return y;}`) — it will not break the line, because that is a formatter's job and there
+  is no formatter here. Put the newline in by hand.
+
+- **A multi-line statement is followed by a blank line**, and so is every `return`. A call whose
+  arguments span lines is a block of thought; the next one starts after a gap:
+
+  ```ts
+  const response = await ctx.staking.getStakingRewardHistory({
+    validatorId: args.validatorId,
+    limit: String(args.limit),
+  });
+
+  if (response.success === false) {
+    throw parseErrorBody(200, response);
+  }
+
+  return trimResponse(response.data, REWARD_FIELDS);
+  ```
+
+  Enforced by `@stylistic/padding-line-between-statements`, and this one **is** fully autofixable —
+  `pnpm lint --fix` will insert the blank lines. In tests it falls out as arrange / act separated
+  from assert, which is the intent.
 
 ### Where a rule belongs
 
@@ -195,12 +216,15 @@ There is **no formatter** in this repo — no Prettier, Biome, dprint or `.edito
 the only automated enforcement, so:
 
 - **Anything mechanically checkable goes in `eslint.config.js`**, style included. That is where
-  `curly` lives, next to the type-honesty rules (`no-explicit-any`, `consistent-type-assertions`).
-  Adding a rule there is preferred over writing it down here, because a rule only in this file is a
-  rule that gets forgotten.
+  `curly` and `@stylistic/padding-line-between-statements` live, next to the type-honesty rules
+  (`no-explicit-any`, `consistent-type-assertions`). Adding a rule there is preferred over writing
+  it down here, because a rule only in this file is a rule that gets forgotten.
 - **This file carries the rules a linter cannot express** — the judgement calls: how much to
   condense, what a tool description must promise, which field to project. Rules that live here are
   documented *with their reason*, so a future change knows what it would be breaking.
+- `@stylistic/eslint-plugin` holds the formatting rules eslint deprecated out of core. Reach for it
+  when a style rule comes up, one rule at a time — it is the middle path between convention and a
+  formatter, and it never rewrites code nobody asked it to touch.
 - Prettier has deliberately **not** been adopted: it would reflow the projection field lists, which
   are grouped by line on purpose, and fight the "don't condense" rule above. If that trade ever
   changes, adopt it in its own commit so the reformat is separable from real changes.

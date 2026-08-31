@@ -8,6 +8,7 @@ describe("parseErrorBody", () => {
       success: false,
       error: { code: "INVALID_NETWORK", message: "Unknown network 'polygon'" },
     });
+
     expect(err).toBeInstanceOf(AnsetaApiError);
     expect(err.code).toBe("INVALID_NETWORK");
     expect(err.status).toBe(400);
@@ -24,6 +25,7 @@ describe("parseErrorBody", () => {
       success: false,
       error: { code: "INVALID_NETWORK", message: "Unknown network 'polygon'" },
     });
+
     const msg = err.toModelMessage();
     expect(msg).toContain("Unknown network 'polygon'");
     expect(msg).toContain("Check the arguments");
@@ -55,6 +57,7 @@ describe("toAnsetaError", () => {
       JSON.stringify({ success: false, error: { code: "NOT_FOUND", message: "no such validator" } }),
       { status: 404, headers: { "content-type": "application/json" } },
     );
+
     const err = await toAnsetaError(new ResponseError(response, "Response returned an error code"));
     expect(err.status).toBe(404);
     expect(err.code).toBe("NOT_FOUND");
@@ -68,6 +71,7 @@ describe("toAnsetaError", () => {
     const err = await toAnsetaError(
       new FetchError(fetchFailed, "The request failed and the interceptors did not return an alternative response"),
     );
+
     expect(err.status).toBe(0);
     expect(err.message).toContain("ENOTFOUND preview.api.invalid");
     expect(err.message).not.toContain("interceptors");
@@ -82,6 +86,7 @@ describe("a 2xx body that reports failure", () => {
       success: false,
       error: { code: "NOT_LIVE", message: "not live yet" },
     });
+
     expect(err.code).toBe("NOT_LIVE");
     expect(err.toModelMessage()).toContain("not live yet");
   });

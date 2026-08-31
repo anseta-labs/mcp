@@ -35,6 +35,7 @@ describe("the tool error boundary", () => {
     const result = await toolThatThrows(new ToolArgumentError(message)).handler(
       { network: "solana" }, ctx,
     );
+
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toBe(message);
     expect(result.content[0]!.text).not.toContain("unreachable");
@@ -43,6 +44,7 @@ describe("the tool error boundary", () => {
   it("translates an upstream error into retry advice", async () => {
     const result = await toolThatThrows(new AnsetaApiError(429, "RATE_LIMITED", "slow down"))
       .handler({ network: "solana" }, ctx);
+
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain("Rate limited");
   });

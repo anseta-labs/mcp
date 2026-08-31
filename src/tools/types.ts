@@ -53,6 +53,7 @@ export interface AnsetaTool {
  */
 export function defineTool<S extends z.ZodRawShape>(tool: ToolDefinition<S>): AnsetaTool {
   const parser = z.object(tool.schema);
+
   return {
     name: tool.name,
     description: tool.description,
@@ -64,6 +65,7 @@ export function defineTool<S extends z.ZodRawShape>(tool: ToolDefinition<S>): An
       } catch (error) {
         if (error instanceof z.ZodError) {
           const message = `Invalid arguments for ${tool.name}:\n${z.prettifyError(error)}`;
+
           return errorResult(message);
         }
 
@@ -72,7 +74,9 @@ export function defineTool<S extends z.ZodRawShape>(tool: ToolDefinition<S>): An
         if (error instanceof ToolArgumentError) {
           return errorResult(error.message);
         }
+
         const message = (await toAnsetaError(error)).toModelMessage();
+
         return errorResult(message);
       }
     },

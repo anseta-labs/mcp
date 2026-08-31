@@ -19,6 +19,7 @@ describe("createApis", () => {
     const seen: string[] = [];
     const fetchImpl = (async (input: RequestInfo | URL) => {
       seen.push(input instanceof Request ? input.url : String(input));
+
       return new Response(JSON.stringify({ success: true, data: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -30,6 +31,7 @@ describe("createApis", () => {
       baseUrl: "https://example.invalid/v1",
       fetchImpl,
     });
+
     await apis.info.getNetworks({});
 
     expect(seen[0]).toContain("https://example.invalid/v1/info/networks");
@@ -40,6 +42,7 @@ describe("createApis", () => {
     const seen: RequestInit[] = [];
     const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
       seen.push(init ?? {});
+
       return new Response(JSON.stringify({ success: true, data: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },

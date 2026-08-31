@@ -125,7 +125,7 @@ server never puts it in a query string.
 pnpm install
 pnpm test           # vitest, no network access — every test injects a stub fetch
 pnpm exec tsc --noEmit
-pnpm lint
+pnpm lint           # eslint; pnpm lint:fix applies the autofixable rules
 pnpm build          # tsup -> dist/
 ```
 
