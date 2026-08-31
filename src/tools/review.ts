@@ -10,7 +10,6 @@ import type { ToolResult } from "../output.js";
 const UNSIGNED_NOTICE =
   "These transactions are unsigned. The user must review and sign them in their own wallet; Anseta never holds a signing key and has not broadcast anything.";
 
-/** Decodes a base-unit amount for human review. Never used to build the request body. */
 export function humanAmount(amount: string, decimals: number | undefined, token: string): string {
   if (decimals === undefined) {
     return "unknown (decimals not provided)";

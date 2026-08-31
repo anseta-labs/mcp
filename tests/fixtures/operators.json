@@ -1,0 +1,46 @@
+[
+  {
+    "operatorId": "eigenlayer-ethereum-0x5accc90436492f24e6af278569691e2c942a676d",
+    "operatorAddress": "0x5aCcC90436492F24E6aF278569691e2c942A676d",
+    "moniker": "Example Restaking Co",
+    "status": "LIVE",
+    "protocol": "eigenlayer",
+    "commissionRate": "0.10",
+    "publicDelegationEnabled": true,
+    "network": {
+      "name": "ethereum",
+      "type": "mainnet",
+      "tokenSymbol": "ETH",
+      "decimals": 18
+    },
+    "services": [
+      {
+        "serviceId": 1,
+        "serviceAddress": "0x870679e138bcdf293b7ff14dd44b70fc97e12fc0",
+        "name": "Example AVS",
+        "status": "ACTIVE",
+        "commissionRate": "0.05"
+      }
+    ],
+    "totalDelegatedAmount": "125000000000000000000",
+    "delegatorCount": 412
+  },
+  {
+    "operatorId": "eigenlayer-ethereum-0x71c6f7ed8c2d4925d0baf16f6a85bb1736d412eb",
+    "operatorAddress": "0x71C6F7Ed8C2d4925d0bAf16f6A85BB1736D412eb",
+    "moniker": "Second Operator",
+    "status": "LIVE",
+    "protocol": "eigenlayer",
+    "commissionRate": "0.00",
+    "publicDelegationEnabled": false,
+    "network": {
+      "name": "ethereum",
+      "type": "mainnet",
+      "tokenSymbol": "ETH",
+      "decimals": 18
+    },
+    "services": [],
+    "totalDelegatedAmount": "0",
+    "delegatorCount": 0
+  }
+]

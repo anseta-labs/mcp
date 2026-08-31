@@ -46,8 +46,6 @@ export default tseslint.config(
     },
   },
   {
-    // Tests construct deliberately partial upstream payloads and stub SDK
-    // methods by name, which needs assertions the source does not.
     files: ["tests/**/*.ts"],
     rules: {
       "@typescript-eslint/consistent-type-assertions": "off",
@@ -56,7 +54,6 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-unsafe-call": "off",
-      // Stubs stand in for async SDK methods, so they are async without awaiting.
       "@typescript-eslint/require-await": "off",
     },
   },

@@ -1,7 +1,46 @@
+# Dependencies and build output
 node_modules/
 dist/
 coverage/
+.pnpm-store/
+
+# Tooling caches
+*.tsbuildinfo
+.eslintcache
+.vitest/
+
+# Logs
 *.log
-.DS_Store
+
+# Secrets. This repo reads ANSETA_API_KEY from the environment, so nothing
+# matching .env belongs in a commit. An example file is the exception.
 .env
 .env.*
+!.env.example
+
+# AI assistants. Project-level config (CLAUDE.md, .claude/agents, .claude/skills)
+# is deliberately committed; only the per-developer and generated parts are not.
+.claude/settings.local.json
+.claude/*.local.json
+CLAUDE.local.md
+AGENTS.local.md
+.mcp.local.json
+.cursor/
+.cursorignore
+.aider*
+.continue/
+.windsurf/
+.gemini/
+.codeium/
+.specstory/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Scratch. A place to keep local captures and one-off scripts out of the tree.
+scratch/
+tmp/

@@ -11,7 +11,7 @@ the authoritative definition of the response rather than from a recorded call:
 | `networks.json` | `NetworkConfig` in `spec/developer_api.json` |
 | `tokens.json` | `TokenInfo` in `spec/developer_api.json` |
 | `stake-tx.json` | `TransactionsResponse` / `Transaction` in `spec/developer_api.json` |
-| `operators.json` | `Operator` in `spec/developer_api.json` |
+| `operators.json` | `Operator` in `@anseta/typescript-sdk` — the spec types the array items as bare `nullable` |
 
 Every address in them is fabricated or taken from the spec's own examples.
 
@@ -25,8 +25,9 @@ ANSETA_API_KEY=<staging-key> ANSETA_BASE_URL=https://staging-api.stakefi.network
 Then re-run `pnpm exec vitest run tests/fixtures.test.ts`. If it fails, the live field
 names differ from the schemas above — **update the projection lists in
 `src/tools/` to match the capture, not the other way round**, and open an issue
-against the docs repo, because `GET /v1/staking/validators` and
-`GET /v1/staking/stakes` are typed as bare `nullable` in the OpenAPI spec.
+against the docs repo, because `GET /v1/staking/validators`, `GET /v1/staking/stakes`
+and `GET /v1/restaking/operators` are typed as bare `nullable` in the OpenAPI
+spec, so the SDK's models are the only typed description of them.
 
 ---
 
