@@ -6,6 +6,14 @@ All notable changes to `@anseta/mcp` are recorded here. The format follows
 
 ## Unreleased
 
+## 0.2.1 - 2026-09-02
+
+### Changed
+
+- `list_tokens` describes itself as listing stakeable tokens, and its `network`
+  and `symbol` filters no longer name restaking in their descriptions. The tool
+  accepts the same arguments as before; only the wording an agent reads changed
+
 ## 0.2.0 - 2026-08-31
 
 Adds EigenLayer restaking, and moves the server onto the generated API client.
