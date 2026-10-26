@@ -3,16 +3,20 @@
   "info": {
     "version": "2.0.0",
     "title": "Anseta Developer API",
-    "description": "API for creating unsigned staking transactions across multiple blockchain networks"
+    "description": "Unified API for blockchain staking operations across multiple networks."
   },
   "servers": [
     {
-      "url": "http://localhost:8081",
+      "url": "http://localhost:8081/v1",
       "description": "Local server"
     },
     {
-      "url": "https://preview.api.stakefi.network",
-      "description": "Preview server"
+      "url": "https://staging-api.stakefi.network/v1",
+      "description": "Staging server"
+    },
+    {
+      "url": "https://preview.api.stakefi.network/v1",
+      "description": "Production server"
     }
   ],
   "security": [
@@ -157,12 +161,6 @@
             "description": "Deposited but not yet credited, in wei — sits in the consensus layer's pending_deposits queue. Null when there is nothing queued. Do not sum with balanceWei.",
             "example": "1000000000000000000"
           },
-          "pendingDepositEstimatedAt": {
-            "type": "string",
-            "nullable": true,
-            "description": "Estimated ISO 8601 time the queued deposit is processed, from its position in the pending_deposits queue. For a new validator it includes the activation delay. Null when nothing is queued.",
-            "example": "2026-10-21T09:12:00Z"
-          },
           "state": {
             "type": "string",
             "enum": [
@@ -239,7 +237,6 @@
           "balanceWei",
           "effectiveBalanceWei",
           "pendingDepositWei",
-          "pendingDepositEstimatedAt",
           "state",
           "consensusLayerState",
           "indexerState",
@@ -510,7 +507,8 @@
           "chromia",
           "binance-smart-chain",
           "mantra",
-          "injective",
+          "nillion",
+          "zenrock",
           "zetachain",
           "cronos",
           "autonity",
@@ -543,8 +541,10 @@
           "aptos-testnet",
           "supra-testnet",
           "near-testnet",
+          "nillion-testnet",
           "mantra-testnet",
           "cardano-testnet",
+          "zenrock-testnet",
           "zetachain-testnet",
           "cronos-testnet",
           "tezos-ghostnet-testnet",
@@ -560,31 +560,18 @@
       "StakingNetwork": {
         "type": "string",
         "enum": [
-          "tron",
           "ethereum",
           "solana",
           "somnia",
           "monad",
-          "hedera",
           "mantra",
+          "nillion",
           "kaia",
           "cardano",
           "sonic",
           "near",
           "aptos",
-          "chromia",
-          "binance-smart-chain",
-          "injective",
-          "zetachain",
-          "cronos",
-          "allora",
-          "berachain",
-          "radix",
-          "supra",
-          "sui",
-          "vanar",
-          "wemix",
-          "tron-testnet",
+          "zenrock",
           "solana-testnet",
           "sonic-testnet",
           "somnia-testnet",
@@ -592,163 +579,33 @@
           "mantra-testnet",
           "monad-testnet",
           "hedera-testnet",
+          "nillion-testnet",
           "kaia-kairos-testnet",
           "cardano-testnet",
-          "near-testnet",
-          "aptos-testnet",
-          "chromia-testnet",
-          "binance-smart-chain-testnet",
-          "zetachain-testnet",
-          "cronos-testnet",
-          "allora-testnet",
-          "autonity-piccadilly-testnet",
-          "berachain-bartio-testnet",
-          "supra-testnet",
-          "sui-testnet",
-          "vanar-vanguard-testnet",
-          "wemix-testnet"
+          "zenrock-testnet"
         ],
         "example": "mantra",
-        "description": "The blockchain network"
+        "description": "The blockchain network to query"
       },
       "StakingToken": {
         "type": "string",
         "enum": [
-          "TRX",
           "POL",
           "SOL",
           "SOMI",
           "MON",
-          "HBAR",
           "MANTRA",
+          "NILL",
           "KAIA",
           "ADA",
           "S",
-          "CHR",
-          "SXT",
           "NEAR",
           "APT",
-          "INJ",
-          "ZETA",
-          "CRO",
-          "ALLO",
-          "BGT",
-          "BERA",
-          "XRD",
-          "SUPRA",
-          "SUI",
-          "VANRY",
-          "WEMIX",
-          "ATN"
+          "ROCK",
+          "HBAR"
         ],
         "example": "MANTRA",
-        "description": "The staked token symbol"
-      },
-      "Stake": {
-        "type": "object",
-        "properties": {
-          "network": {
-            "$ref": "#/components/schemas/StakingNetwork"
-          },
-          "token": {
-            "$ref": "#/components/schemas/StakingToken"
-          },
-          "tokenAddress": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "nullable": true
-              },
-              {
-                "nullable": true
-              }
-            ],
-            "description": "The token contract address (null for native tokens, address for ERC20/SPL tokens)"
-          },
-          "stakerAddress": {
-            "type": "string",
-            "description": "The address that owns the stake"
-          },
-          "validatorAddress": {
-            "type": "string",
-            "description": "The validator address (if applicable)"
-          },
-          "amount": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Amount staked in smallest unit of the asset"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "staked",
-              "unstaking",
-              "unstaked"
-            ],
-            "description": "Current status of the stake"
-          },
-          "unstakingCompletionDate": {
-            "type": "string",
-            "nullable": true,
-            "description": "ISO 8601 date when unstaking will complete (if unstaking/deactivating)"
-          },
-          "rewards": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Accumulated rewards (if available)"
-          }
-        },
-        "required": [
-          "network",
-          "token",
-          "stakerAddress",
-          "amount",
-          "status"
-        ],
-        "description": "Information about a stake or delegation on a blockchain network. Status meanings: 'staked' = actively staking/earning rewards, 'unstaking' = unbonding period in progress, 'unstaked' = unstaking complete and ready to withdraw",
-        "example": {
-          "network": "mantra",
-          "token": "MANTRA",
-          "tokenAddress": null,
-          "stakerAddress": "mantra1abc...",
-          "validatorAddress": "mantravaloper1xyz...",
-          "amount": "4000000000000000000",
-          "status": "unstaking",
-          "unstakingCompletionDate": "2025-12-01T15:30:00Z",
-          "rewards": "200000000000000000"
-        }
-      },
-      "GetStakesResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "stakes": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Stake"
-                },
-                "description": "Staking positions for the address"
-              }
-            },
-            "required": [
-              "stakes"
-            ]
-          },
-          "error": {
-            "$ref": "#/components/schemas/ApiError"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "description": "Staking positions for the address"
+        "description": "The token to query stakes for"
       },
       "Transaction": {
         "type": "object",
@@ -900,11 +757,11 @@
           },
           "staker": {
             "type": "string",
-            "description": "Staker address or public key.\n\n| Network Type | Format | Example |\n|--------------|--------|---------|\n| **Cosmos networks (Mantra/Injective/...)** | Bech32 address | mantra1234567890abcdefghijklmnopqrstuvwxyz123456 |\n| **Solana** | Base58 encoded public key | updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM |\n| **Cardano** | Bech32 address | addr1qx2kd4xkl38xkj2vh45jhk2l1kj3h4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9z0a1b2c3d4e5f6g7h8i9j0k1l2m3n4 |\n| **EVM Networks (Polygon/Kaia/Somnia/...)** | 0x-prefixed hex address | 0x1234567890abcdef1234567890abcdef12345678 |\n"
+            "description": "Staker address or public key.\n\n| Network Type | Format | Example |\n|--------------|--------|---------|\n| **Cosmos networks (Mantra/Nillion/...)** | Bech32 address | mantra1234567890abcdefghijklmnopqrstuvwxyz123456 |\n| **Solana** | Base58 encoded public key | updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM |\n| **Cardano** | Bech32 address | addr1qx2kd4xkl38xkj2vh45jhk2l1kj3h4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9z0a1b2c3d4e5f6g7h8i9j0k1l2m3n4 |\n| **EVM Networks (Polygon/Kaia/Somnia/...)** | 0x-prefixed hex address | 0x1234567890abcdef1234567890abcdef12345678 |\n"
           },
           "validator": {
             "type": "string",
-            "description": "Validator address/pubkey/identifier. **REQUIRED** for: Cosmos networks, Solana, Cardano, Polygon, Kaia, Somnia.\n\n| Network Type | Format | Example |\n|--------------|--------|---------|\n| **Cosmos networks (Mantra/Injective/...)** | Bech32 validator operator address | mantravaloper1234567890abcdefghijklmnopqrstuvwxyz123456 |\n| **Solana** | Base58 encoded vote account address | he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk |\n| **Cardano** | Pool ID bech32 address | pool1pu5jlj4q9w9jlxeu370a3c9myx47md5j5... |\n| **Polygon** | 0x-prefixed validator contract address | 0x26D1Ec50b4e62C1D1a40d16e7caD677311A5F2C5 |\n| **Kaia** | 0x-prefixed validator address | 0xabcdef1234567890abcdef1234567890abcdef12 |\n| **Somnia** | 0x-prefixed validator address | 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8"
+            "description": "Validator address/pubkey/identifier. **REQUIRED** for: Cosmos networks, Solana, Cardano, Polygon, Kaia, Somnia.\n\n| Network Type | Format | Example |\n|--------------|--------|---------|\n| **Cosmos networks (Mantra/Nillion/...)** | Bech32 validator operator address | mantravaloper1234567890abcdefghijklmnopqrstuvwxyz123456 |\n| **Solana** | Base58 encoded vote account address | he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk |\n| **Cardano** | Pool ID bech32 address | pool1pu5jlj4q9w9jlxeu370a3c9myx47md5j5... |\n| **Polygon** | 0x-prefixed validator contract address | 0x26D1Ec50b4e62C1D1a40d16e7caD677311A5F2C5 |\n| **Kaia** | 0x-prefixed validator address | 0xabcdef1234567890abcdef1234567890abcdef12 |\n| **Somnia** | 0x-prefixed validator address | 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb8"
           },
           "params": {
             "type": "object",
@@ -925,7 +782,7 @@
           "ethereum-hoodi-testnet"
         ],
         "example": "ethereum",
-        "description": "The blockchain network"
+        "description": "The blockchain network to query"
       },
       "RestakingToken": {
         "type": "string",
@@ -934,117 +791,10 @@
           "BEIGEN",
           "STETH",
           "CBETH",
-          "RETH",
-          "LSETH",
-          "SFRXETH",
-          "ETHX",
-          "OSETH",
-          "METH",
-          "ANKRETH",
-          "WETH"
+          "RETH"
         ],
         "example": "STETH",
-        "description": "The restaked token symbol"
-      },
-      "RestakingStake": {
-        "type": "object",
-        "properties": {
-          "network": {
-            "$ref": "#/components/schemas/RestakingNetwork"
-          },
-          "token": {
-            "$ref": "#/components/schemas/RestakingToken"
-          },
-          "tokenAddress": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "nullable": true
-              },
-              {
-                "nullable": true
-              }
-            ],
-            "description": "The token contract address"
-          },
-          "stakerAddress": {
-            "type": "string",
-            "description": "The address that owns the restaked position"
-          },
-          "operatorAddress": {
-            "type": "string",
-            "description": "The EigenLayer operator address (if delegated)"
-          },
-          "amount": {
-            "type": "string",
-            "pattern": "^\\d+$",
-            "description": "Amount restaked in smallest unit of the asset"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "staked",
-              "unstaking",
-              "unstaked"
-            ],
-            "description": "Current status of the restaked position"
-          },
-          "unstakingCompletionDate": {
-            "type": "string",
-            "nullable": true,
-            "description": "ISO 8601 date when unstaking will complete (if unstaking/deactivating)"
-          }
-        },
-        "required": [
-          "network",
-          "token",
-          "stakerAddress",
-          "amount",
-          "status"
-        ],
-        "description": "Information about a restaked position on EigenLayer. Status meanings: 'staked' = actively restaked, 'unstaking' = withdrawal queued and in cooldown, 'unstaked' = withdrawal ready to complete",
-        "example": {
-          "network": "ethereum",
-          "token": "EIGEN",
-          "tokenAddress": "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
-          "stakerAddress": "0x1234567890abcdef1234567890abcdef12345678",
-          "operatorAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
-          "amount": "500000000000000000000",
-          "status": "unstaking",
-          "unstakingCompletionDate": "2025-12-08T15:30:00Z"
-        }
-      },
-      "GetRestakingStakesResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "stakes": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/RestakingStake"
-                },
-                "description": "Restaking positions for the address"
-              }
-            },
-            "required": [
-              "stakes"
-            ]
-          },
-          "error": {
-            "$ref": "#/components/schemas/ApiError"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "description": "Restaking positions for the address"
+        "description": "Optional token filter. Omit to return the staker's positions across every restaked token."
       },
       "RestakingDepositRequest": {
         "type": "object",
@@ -1311,106 +1061,6 @@
         ],
         "description": "List of supported tokens"
       },
-      "DiscoveryNetwork": {
-        "type": "string",
-        "enum": [
-          "tron",
-          "ethereum",
-          "solana",
-          "somnia",
-          "monad",
-          "hedera",
-          "mantra",
-          "kaia",
-          "cardano",
-          "sonic",
-          "near",
-          "aptos",
-          "chromia",
-          "binance-smart-chain",
-          "injective",
-          "zetachain",
-          "cronos",
-          "allora",
-          "berachain",
-          "radix",
-          "supra",
-          "sui",
-          "vanar",
-          "wemix",
-          "tron-testnet",
-          "solana-testnet",
-          "sonic-testnet",
-          "somnia-testnet",
-          "ethereum-sepolia-testnet",
-          "mantra-testnet",
-          "monad-testnet",
-          "hedera-testnet",
-          "kaia-kairos-testnet",
-          "cardano-testnet",
-          "near-testnet",
-          "aptos-testnet",
-          "chromia-testnet",
-          "binance-smart-chain-testnet",
-          "zetachain-testnet",
-          "cronos-testnet",
-          "allora-testnet",
-          "autonity-piccadilly-testnet",
-          "berachain-bartio-testnet",
-          "supra-testnet",
-          "sui-testnet",
-          "vanar-vanguard-testnet",
-          "wemix-testnet",
-          "ethereum-hoodi-testnet"
-        ],
-        "example": "ethereum",
-        "description": "Filter by network name"
-      },
-      "DiscoveryToken": {
-        "type": "string",
-        "enum": [
-          "TRX",
-          "POL",
-          "SOL",
-          "SOMI",
-          "MON",
-          "HBAR",
-          "MANTRA",
-          "KAIA",
-          "ADA",
-          "S",
-          "CHR",
-          "SXT",
-          "NEAR",
-          "APT",
-          "INJ",
-          "ZETA",
-          "CRO",
-          "ALLO",
-          "BGT",
-          "BERA",
-          "XRD",
-          "SUPRA",
-          "SUI",
-          "VANRY",
-          "WEMIX",
-          "ATN",
-          "EIGEN",
-          "BEIGEN",
-          "STETH",
-          "CBETH",
-          "RETH",
-          "LSETH",
-          "SFRXETH",
-          "ETHX",
-          "OSETH",
-          "METH",
-          "ANKRETH",
-          "WETH"
-        ],
-        "example": "STETH",
-        "description": "Filter by token symbol"
-      },
       "StakingOption": {
         "type": "object",
         "properties": {
@@ -1513,12 +1163,12 @@
         ],
         "description": "List of staking options"
       },
-      "Validator": {
+      "EntityValidator": {
         "type": "object",
         "properties": {
           "validatorId": {
             "type": "string",
-            "description": "Validator identifier (UUID)"
+            "description": "Validator identifier"
           },
           "validatorAddress": {
             "type": "string",
@@ -1609,7 +1259,7 @@
           "status",
           "network"
         ],
-        "description": "A validator available for delegation. validatorId is a UUID and is not the same value as validatorAddress; the history and rewards endpoints take the UUID."
+        "description": "Validator within an entity"
       },
       "Entity": {
         "type": "object",
@@ -1637,7 +1287,7 @@
           "validators": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Validator"
+              "$ref": "#/components/schemas/EntityValidator"
             },
             "description": "Validators operated by this entity"
           }
@@ -1676,137 +1326,6 @@
           "count"
         ],
         "description": "List of entities"
-      },
-      "GetValidatorsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Validator"
-            }
-          },
-          "error": {
-            "$ref": "#/components/schemas/ApiError"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "description": "List of validators"
-      },
-      "Operator": {
-        "type": "object",
-        "properties": {
-          "operatorId": {
-            "type": "string",
-            "description": "Operator identifier (UUID)"
-          },
-          "operatorAddress": {
-            "type": "string",
-            "description": "Operator address"
-          },
-          "moniker": {
-            "type": "string",
-            "description": "Operator display name"
-          },
-          "status": {
-            "type": "string",
-            "description": "Operator status"
-          },
-          "protocol": {
-            "type": "object",
-            "properties": {
-              "protocol": {
-                "type": "string",
-                "description": "Restaking protocol identifier"
-              },
-              "network": {
-                "type": "string",
-                "description": "Network identifier"
-              }
-            },
-            "required": [
-              "protocol",
-              "network"
-            ],
-            "description": "Protocol and network the operator runs on"
-          },
-          "commissionRate": {
-            "type": "string"
-          },
-          "publicDelegationEnabled": {
-            "type": "boolean"
-          },
-          "services": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "serviceId": {
-                  "type": "number",
-                  "description": "Service identifier"
-                },
-                "serviceAddress": {
-                  "type": "string",
-                  "description": "Service contract address"
-                },
-                "name": {
-                  "type": "string",
-                  "description": "Service name"
-                },
-                "status": {
-                  "type": "string",
-                  "description": "Service status"
-                },
-                "commissionRate": {
-                  "type": "string",
-                  "description": "Commission rate for this service"
-                }
-              },
-              "required": [
-                "serviceId",
-                "serviceAddress",
-                "name",
-                "status",
-                "commissionRate"
-              ]
-            },
-            "description": "Services this operator secures"
-          }
-        },
-        "required": [
-          "operatorId",
-          "operatorAddress",
-          "moniker",
-          "status",
-          "protocol"
-        ],
-        "description": "A restaking operator available for delegation. operatorId is a UUID and is not the same value as operatorAddress; the history and rewards endpoints take the UUID."
-      },
-      "GetOperatorsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Operator"
-            }
-          },
-          "error": {
-            "$ref": "#/components/schemas/ApiError"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "description": "List of restaking operators"
       },
       "DelegationHistoryItem": {
         "type": "object",
@@ -2053,76 +1572,6 @@
         },
         "required": [
           "validators"
-        ]
-      },
-      "EthereumGetQueueResponse": {
-        "type": "object",
-        "properties": {
-          "network": {
-            "$ref": "#/components/schemas/EthereumNetwork"
-          },
-          "headEpoch": {
-            "type": "integer",
-            "description": "Beacon head epoch the snapshot was taken at"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the snapshot was taken (ISO 8601)"
-          },
-          "entry": {
-            "type": "object",
-            "properties": {
-              "queuedGwei": {
-                "type": "string",
-                "description": "Total ETH waiting in the deposit queue, in gwei"
-              },
-              "depositCount": {
-                "type": "integer",
-                "description": "Number of deposits waiting in the queue"
-              },
-              "waitSeconds": {
-                "type": "integer",
-                "description": "Estimated time until a deposit made now activates a new validator"
-              }
-            },
-            "required": [
-              "queuedGwei",
-              "depositCount",
-              "waitSeconds"
-            ],
-            "description": "Entry (activation) queue"
-          },
-          "exit": {
-            "type": "object",
-            "properties": {
-              "exitingCount": {
-                "type": "integer",
-                "description": "Number of validators currently exiting"
-              },
-              "lastExitEpoch": {
-                "type": "integer",
-                "description": "Exit epoch of the last validator in the queue"
-              },
-              "waitSeconds": {
-                "type": "integer",
-                "description": "Estimated time until an exit requested now is processed (funds follow after the withdrawal sweep)"
-              }
-            },
-            "required": [
-              "exitingCount",
-              "lastExitEpoch",
-              "waitSeconds"
-            ],
-            "description": "Exit queue"
-          }
-        },
-        "required": [
-          "network",
-          "headEpoch",
-          "updatedAt",
-          "entry",
-          "exit"
         ]
       },
       "EthereumStakeResponse": {
@@ -2576,7 +2025,7 @@
       "get": {
         "operationId": "getStakingPositions",
         "summary": "Get staking positions",
-        "description": "\nReturns the current staking positions for an address across supported networks.\n\n## Tokens and Networks\n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum |\n| **SOL** | solana, solana-testnet |\n| **KAIA** | kaia |\n| **S** | sonic, sonic-testnet |\n| **MANTRA** | mantra, mantra-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n",
+        "description": "\nReturns the current staking positions for an address across supported networks.\n\n## Tokens and Networks\n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum |\n| **SOL** | solana, solana-testnet |\n| **KAIA** | kaia |\n| **S** | sonic, sonic-testnet |\n| **MANTRA** | mantra, mantra-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n| **ROCK** | zenrock, zenrock-testnet |\n",
         "tags": [
           "Simple Staking"
         ],
@@ -2594,14 +2043,7 @@
           },
           {
             "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/StakingNetwork"
-                },
-                {
-                  "description": "The blockchain network to query"
-                }
-              ]
+              "$ref": "#/components/schemas/StakingNetwork"
             },
             "required": true,
             "description": "The blockchain network to query",
@@ -2620,14 +2062,7 @@
           },
           {
             "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/StakingToken"
-                },
-                {
-                  "description": "The token to query stakes for"
-                }
-              ]
+              "$ref": "#/components/schemas/StakingToken"
             },
             "required": true,
             "description": "The token to query stakes for",
@@ -2641,7 +2076,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetStakesResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
                 }
               }
             }
@@ -2673,7 +2119,7 @@
       "post": {
         "operationId": "createStake",
         "summary": "Create staking transactions",
-        "description": "\nCreates unsigned transactions for staking or delegation operations across supported blockchain networks.\n\nAddress format, token denomination and some other parameters vary by network. Examples for each network are provided in the examples on the right panel.\n\n## Available staking combinations \n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum, ethereum-sepolia-testnet |\n| **SOL** | solana, solana-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n| **MON** | monad, monad-testnet |\n| **S** | sonic, sonic-testnet |\n| **KAIA** | kaia |\n| **MANTRA** | mantra, mantra-testnet |\n| **SOMI** | somnia |\n\n**Notes:**\n- **Amount**: Amount is not required for Cardano. All balance is staked by protocol design.\n",
+        "description": "\nCreates unsigned transactions for staking or delegation operations across supported blockchain networks.\n\nAddress format, token denomination and some other parameters vary by network. Examples for each network are provided in the examples on the right panel.\n\n## Available staking combinations \n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum, ethereum-sepolia-testnet |\n| **SOL** | solana, solana-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n| **MON** | monad, monad-testnet |\n| **S** | sonic, sonic-testnet |\n| **KAIA** | kaia |\n| **MANTRA** | mantra, mantra-testnet |\n| **NIL** | nillion, nillion-testnet |\n| **SOMI** | somnia |\n| **ROCK** | zenrock, zenrock-testnet |\n\n**Notes:**\n- **Amount**: Amount is not required for Cardano. All balance is staked by protocol design.\n",
         "tags": [
           "Simple Staking"
         ],
@@ -2726,6 +2172,17 @@
                     "amount": "1000000000000000000",
                     "validator": "mantravaloper1r3s4pefpz69fk4rq8sn0zt2wxnv09uffz06nxu",
                     "staker": "mantra1234567890abcdefghijklmnopqrstuvwxyz123456"
+                  }
+                },
+                "nillionDelegate": {
+                  "summary": "Nillion NILL Delegation",
+                  "description": "Delegate NILL tokens on Nillion network. 'staker' is the staker's Bech32 address starting with 'nillion1'. Validator is the Bech32 validator operator address starting with 'nillionvaloper1'.",
+                  "value": {
+                    "network": "nillion",
+                    "token": "NILL",
+                    "amount": "1000000",
+                    "validator": "nillionvaloper1m0jknxsq2zz0yw2mns8q49zcf0jwjar8qgz2y0",
+                    "staker": "nillion1234567890abcdefghijklmnopqrstuvwxyz123456"
                   }
                 },
                 "kaiaDelegate": {
@@ -2791,6 +2248,17 @@
                     "token": "S",
                     "amount": "1000000000000000000",
                     "staker": "0x1234567890abcdef1234567890abcdef12345678"
+                  }
+                },
+                "zenrockDelegate": {
+                  "summary": "Zenrock ROCK Delegation",
+                  "description": "Delegate ROCK tokens on Zenrock network. 'staker' is the staker's Bech32 address starting with 'zen1'. Validator is the Bech32 validator operator address starting with 'zenvaloper1'.",
+                  "value": {
+                    "network": "zenrock",
+                    "token": "ROCK",
+                    "amount": "1000000",
+                    "validator": "zenvaloper1ly9l3rh5092l0jp4kc5pav4x5802585zv8z97c",
+                    "staker": "zen1234567890abcdefghijklmnopqrstuvwxyz123456"
                   }
                 }
               }
@@ -2873,6 +2341,38 @@
                             },
                             "encodedTx": "base64encodedtransaction",
                             "description": "Delegate MANTRA tokens on MANTRA Chain"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "nillionSuccess": {
+                    "summary": "Nillion NILL delegation response",
+                    "description": "Example successful response for Nillion NILL delegation",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "transactions": [
+                          {
+                            "type": "delegate",
+                            "encodingFormat": "base64",
+                            "transactionType": "cosmos",
+                            "tx": {
+                              "body": {
+                                "messages": [
+                                  {
+                                    "typeUrl": "/cosmos.staking.v1beta1.MsgDelegate",
+                                    "value": "CoJuaWxsMTIzNDU2Nzg5MGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MTIzNDU2EkduaWxsdmFsb3BlcjEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyMzQ1NhoPCgRuaWxsEgcxMDAwMDAw"
+                                  }
+                                ],
+                                "memo": "Delegating NILL tokens with Anseta's developer API",
+                                "timeoutHeight": "0",
+                                "extensionOptions": [],
+                                "nonCriticalExtensionOptions": []
+                              }
+                            },
+                            "encodedTx": "base64encodedtransaction",
+                            "description": "Delegate NILL tokens on Nillion"
                           }
                         ]
                       }
@@ -3074,6 +2574,38 @@
                         ]
                       }
                     }
+                  },
+                  "zenrockSuccess": {
+                    "summary": "Zenrock ROCK delegation response",
+                    "description": "Example successful response for Zenrock ROCK delegation",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "transactions": [
+                          {
+                            "type": "delegate",
+                            "encodingFormat": "base64",
+                            "transactionType": "cosmos",
+                            "tx": {
+                              "body": {
+                                "messages": [
+                                  {
+                                    "typeUrl": "/zrchain.validation.MsgDelegate",
+                                    "value": "Cit6ZW4xMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTYSOHplbnZhbG9wZXIxbHk5bDNyaDUwOTJsMGpwNGtjNXBhdjR4NTgwMjU4NXp2OHo5N2MaDQoFdXJvY2sSBDEwMDA="
+                                  }
+                                ],
+                                "memo": "Delegating ROCK tokens with Anseta's developer API",
+                                "timeoutHeight": "0",
+                                "extensionOptions": [],
+                                "nonCriticalExtensionOptions": []
+                              }
+                            },
+                            "encodedTx": "base64encodedtransaction",
+                            "description": "Delegate ROCK tokens on Zenrock"
+                          }
+                        ]
+                      }
+                    }
                   }
                 }
               }
@@ -3162,14 +2694,7 @@
           },
           {
             "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/RestakingNetwork"
-                },
-                {
-                  "description": "The blockchain network to query"
-                }
-              ]
+              "$ref": "#/components/schemas/RestakingNetwork"
             },
             "required": true,
             "description": "The blockchain network to query",
@@ -3189,14 +2714,7 @@
           },
           {
             "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/RestakingToken"
-                },
-                {
-                  "description": "Optional token filter. Omit to return the staker's positions across every restaked token."
-                }
-              ]
+              "$ref": "#/components/schemas/RestakingToken"
             },
             "required": false,
             "description": "Optional token filter. Omit to return the staker's positions across every restaked token.",
@@ -3210,7 +2728,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetRestakingStakesResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
                 }
               }
             }
@@ -4025,7 +3554,7 @@
       "post": {
         "operationId": "createUnstake",
         "summary": "Create stake unstaking transactions",
-        "description": "\nCreates unsigned transactions for the staking unstaking operations across supported blockchain networks.\n\nAddress format, token denomination and some other parameters vary by network. Examples for each network are provided in the examples on the right panel.\n\n## Available Networks and Tokens\n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum, ethereum-sepolia-testnet |\n| **SOL** | solana, solana-testnet |\n| **KAIA** | kaia |\n| **S** | sonic, sonic-testnet |\n| **MANTRA** | mantra, mantra-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **SOMI** | somnia |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n| **MON** | monad, monad-testnet |\n",
+        "description": "\nCreates unsigned transactions for the staking unstaking operations across supported blockchain networks.\n\nAddress format, token denomination and some other parameters vary by network. Examples for each network are provided in the examples on the right panel.\n\n## Available Networks and Tokens\n\n| Token | Network |\n|-------|---------|\n| **POL** | ethereum, ethereum-sepolia-testnet |\n| **SOL** | solana, solana-testnet |\n| **KAIA** | kaia |\n| **S** | sonic, sonic-testnet |\n| **MANTRA** | mantra, mantra-testnet |\n| **NIL** | nillion, nillion-testnet |\n| **ADA** | cardano, cardano-testnet |\n| **SOMI** | somnia |\n| **APT** | aptos, aptos-testnet |\n| **NEAR** | near, near-testnet |\n| **MON** | monad, monad-testnet |\n| **ROCK** | zenrock, zenrock-testnet |\n",
         "tags": [
           "Simple Staking"
         ],
@@ -4055,6 +3584,17 @@
                     "token": "POL",
                     "validator": "0x632d0bddcea18b89df816d89bbf8c00bab86d7b7",
                     "staker": "0x1234567890abcdef1234567890abcdef12345678"
+                  }
+                },
+                "zenrockUndelegate": {
+                  "summary": "Zenrock ROCK Unstaking",
+                  "description": "Unstake ROCK tokens on Zenrock network. 'staker' is the staker's Bech32 address starting with 'zen1'. Validator is the Bech32 validator operator address starting with 'zenvaloper1'.",
+                  "value": {
+                    "network": "zenrock",
+                    "token": "ROCK",
+                    "amount": "1000000",
+                    "validator": "zenvaloper1ly9l3rh5092l0jp4kc5pav4x5802585zv8z97c",
+                    "staker": "zen1234567890abcdefghijklmnopqrstuvwxyz123456"
                   }
                 }
               }
@@ -4150,6 +3690,38 @@
                             },
                             "encodedTx": "0x02f86883aa36a7808080830f424094bed789c6008f788a28fc222c83082d67033daf7f80b844e570b78b0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000007a120c0",
                             "description": "Request withdrawal (sellVoucher) from validator"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "zenrockSuccess": {
+                    "summary": "Zenrock ROCK undelegation response",
+                    "description": "Example successful response for Zenrock ROCK undelegation",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "transactions": [
+                          {
+                            "type": "undelegate",
+                            "encodingFormat": "base64",
+                            "transactionType": "cosmos",
+                            "tx": {
+                              "body": {
+                                "messages": [
+                                  {
+                                    "typeUrl": "/zrchain.validation.MsgUndelegate",
+                                    "value": "Cit6ZW4xMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTYSOHplbnZhbG9wZXIxbHk5bDNyaDUwOTJsMGpwNGtjNXBhdjR4NTgwMjU4NXp2OHo5N2MaDQoFdXJvY2sSBDEwMDA="
+                                  }
+                                ],
+                                "memo": "Undelegating ROCK tokens with Anseta's developer API",
+                                "timeoutHeight": "0",
+                                "extensionOptions": [],
+                                "nonCriticalExtensionOptions": []
+                              }
+                            },
+                            "encodedTx": "base64encodedtransaction",
+                            "description": "Undelegate ROCK tokens on Zenrock"
                           }
                         ]
                       }
@@ -4286,6 +3858,16 @@
                     "staker": "mantra1234567890abcdefghijklmnopqrstuvwxyz123456"
                   }
                 },
+                "nillionUndelegate": {
+                  "summary": "Nillion NILL Withdrawal",
+                  "description": "Withdraw NILL tokens on Nillion.",
+                  "value": {
+                    "network": "nillion",
+                    "token": "NILL",
+                    "validator": "nillionvaloper1m0jknxsq2zz0yw2mns8q49zcf0jwjar8qgz2y0",
+                    "staker": "nillion1234567890abcdefghijklmnopqrstuvwxyz123456"
+                  }
+                },
                 "solanaUndelegate": {
                   "summary": "Solana SOL Withdrawal",
                   "description": "Withdraw from a Solana stake account. 'staker' is the fee payer (Base58). Validator is the vote account (Base58).",
@@ -4353,6 +3935,36 @@
                             },
                             "encodedTx": "CqcBCiUvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dVbmRlbGVnYXRlEn4KMG1hbnRyYTEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyMzQ1NhI3bWFudHJhdmFsb3BlcjEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyMzQ1NhoRCgZtYW50cmESBzEwMDAwMDASdVVuZGVsZWdhdGluZyAxMDAwMDAwIG1hbnRyYSBmcm9tIG1hbnRyYXZhbG9wZXIxMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTYgd2l0aCBTdGFrZUZpJ3MgZGV2ZWxvcGVyIEFQSQ==",
                             "description": "Undelegate MANTRA tokens"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "nillionSuccess": {
+                    "summary": "Nillion NILL undelegation response",
+                    "description": "Example successful response for Nillion NILL undelegation",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "transactions": [
+                          {
+                            "type": "undelegate",
+                            "transactionType": "cosmos",
+                            "encodingFormat": "base64",
+                            "tx": {
+                              "messages": [
+                                {
+                                  "typeUrl": "/cosmos.staking.v1beta1.MsgUndelegate",
+                                  "value": "CjFuaWxsaW9uMTIzNDU2Nzg5MGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MTIzNDU2EjhuaWxsaW9udmFsb3BlcjEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyMzQ1NhoSCgduaWxsaW9uEgcxMDAwMDAw"
+                                }
+                              ],
+                              "memo": "Undelegating 1000000 nillion from nillionvaloper1234567890abcdefghijklmnopqrstuvwxyz123456 with Anseta's developer API",
+                              "timeoutHeight": "0",
+                              "extensionOptions": [],
+                              "nonCriticalExtensionOptions": []
+                            },
+                            "encodedTx": "CqsBCiUvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dVbmRlbGVnYXRlEoEBCjFuaWxsaW9uMTIzNDU2Nzg5MGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MTIzNDU2EjhuaWxsaW9udmFsb3BlcjEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyMzQ1NhoSCgduaWxsaW9uEgcxMDAwMDAwEndVbmRlbGVnYXRpbmcgMTAwMDAwMCBuaWxsaW9uIGZyb20gbmlsbGlvbnZhbG9wZXIxMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTYgd2l0aCBTdGFrZUZpJ3MgZGV2ZWxvcGVyIEFQSQ==",
+                            "description": "Undelegate NILLION tokens"
                           }
                         ]
                       }
@@ -4559,7 +4171,14 @@
         "parameters": [
           {
             "schema": {
-              "$ref": "#/components/schemas/DiscoveryNetwork"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/StakingNetwork"
+                },
+                {
+                  "description": "Filter by network name"
+                }
+              ]
             },
             "required": false,
             "description": "Filter by network name",
@@ -4568,7 +4187,14 @@
           },
           {
             "schema": {
-              "$ref": "#/components/schemas/DiscoveryToken"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/StakingToken"
+                },
+                {
+                  "description": "Filter by token symbol"
+                }
+              ]
             },
             "required": false,
             "description": "Filter by token symbol",
@@ -4670,7 +4296,14 @@
         "parameters": [
           {
             "schema": {
-              "$ref": "#/components/schemas/DiscoveryNetwork"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/StakingNetwork"
+                },
+                {
+                  "description": "Filter by network name"
+                }
+              ]
             },
             "required": false,
             "description": "Filter by network name",
@@ -4679,7 +4312,14 @@
           },
           {
             "schema": {
-              "$ref": "#/components/schemas/DiscoveryToken"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/StakingToken"
+                },
+                {
+                  "description": "Filter by token symbol"
+                }
+              ]
             },
             "required": false,
             "description": "Filter by token symbol",
@@ -4897,7 +4537,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetValidatorsResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -4929,7 +4584,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetOperatorsResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
                 }
               }
             }
@@ -5790,63 +5460,6 @@
         }
       }
     },
-    "/v1/ethereum-staking/queue": {
-      "get": {
-        "operationId": "ethereumGetQueue",
-        "summary": "Get Queue",
-        "description": "Current size of the beacon chain entry (deposit) and exit queues, with estimated wait times. The snapshot is refreshed about every minute; `updatedAt` says when it was taken.\n\n`entry.waitSeconds` estimates how long a deposit made now takes to activate a new validator. `exit.waitSeconds` estimates how long an exit requested now takes to be processed; funds reach the withdrawal address after the withdrawal sweep that follows.",
-        "tags": [
-          "Ethereum Staking"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/components/schemas/EthereumNetwork"
-            },
-            "required": true,
-            "description": "Target Ethereum network",
-            "name": "network",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Queue snapshot",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/EthereumGetQueueResponse"
-                    },
-                    "error": {
-                      "$ref": "#/components/schemas/ApiError"
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/ethereum-staking/stake": {
       "post": {
         "operationId": "ethereumStake",
@@ -6115,6 +5728,16 @@
           },
           "404": {
             "description": "Validator not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An exit was already submitted for this validator. The consensus layer takes about 4 epochs (~25 minutes) to assign an exit epoch; poll the validator rather than resubmitting.",
             "content": {
               "application/json": {
                 "schema": {
